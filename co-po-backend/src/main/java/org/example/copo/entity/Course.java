@@ -35,7 +35,7 @@ public class Course {
     @Column(name = "course_name", nullable = false, length = 100)
     private String courseName;
 
-    @Column(nullable = false, precision = 3, scale = 1)
+    @Column(nullable = false)
     private Double credits;
 
     @Column(nullable = false, length = 3)
