@@ -9,6 +9,9 @@ import ManageStudents from './pages/admin/ManageStudents';
 import ManageCourses from './pages/admin/ManageCourses';
 import ManageEnrollments from './pages/admin/ManageEnrollments';
 import ManageCourseAssignments from './pages/admin/ManageCourseAssignments';
+import ManageCulminationCourses from './pages/admin/ManageCulminationCourses';
+import ManageThresholds from './pages/admin/ManageThresholds';
+import ManageGraduatingStudents from './pages/admin/ManageGraduatingStudents';
 
 import FacultyLayout from './pages/faculty/FacultyLayout';
 import ManageAssessments from './pages/faculty/ManageAssessments';
@@ -39,6 +42,9 @@ function App() {
           <Route path="courses" element={<ManageCourses />} />
           <Route path="enrollments" element={<ManageEnrollments />} />
           <Route path="course-assignments" element={<ManageCourseAssignments />} />
+          <Route path="culmination-courses" element={<ManageCulminationCourses />} />
+          <Route path="thresholds" element={<ManageThresholds />} />
+          <Route path="graduating-students" element={<ManageGraduatingStudents />} />
         </Route>
         
         <Route 

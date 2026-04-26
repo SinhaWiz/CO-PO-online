@@ -41,6 +41,35 @@ export interface CourseAssignment {
   department: string;
 }
 
+export interface Thresholds {
+  coIndividual: number;
+  poIndividual: number;
+  coCohort: number;
+  poCohort: number;
+}
+
+export interface CulminationCourseItem {
+  courseCode: string;
+  courseName: string;
+  display: string;
+}
+
+export interface CulminationSaveResult {
+  saved: boolean;
+  missingPOs: string[];
+}
+
+export interface GraduatingStudentRow {
+  id: string;
+  name: string;
+  comment: string;
+}
+
+export interface GraduatingSaveResult {
+  graduatingCount: number;
+  commentedNonGraduatingCount: number;
+}
+
 // Faculties API
 export const getFaculties = () => api.get<Faculty[]>('/admin/faculties');
 export const createFaculty = (data: Faculty) => api.post<Faculty>('/admin/faculties', data);
@@ -74,3 +103,35 @@ export const deleteCourseAssignment = (courseCode: string, programme: string, ac
   api.delete(
     `/admin/assignments/${encodeURIComponent(courseCode)}/${encodeURIComponent(programme)}/${encodeURIComponent(academicYear)}/${encodeURIComponent(department)}`,
   );
+
+// Configuration APIs
+export const getThresholds = () => api.get<Thresholds>('/admin/config/thresholds');
+export const updateThresholds = (data: Thresholds) => api.put('/admin/config/thresholds', data);
+
+export const getCulminationProgrammes = () => api.get<string[]>('/admin/config/culmination/programmes');
+export const getCulminationCoursesForProgramme = (programme: string) =>
+  api.get<CulminationCourseItem[]>('/admin/config/culmination/courses', { params: { programme } });
+export const getSelectedCulminationCourseCodes = (programme: string) =>
+  api.get<string[]>('/admin/config/culmination/selected', { params: { programme } });
+export const saveCulminationCourses = (programme: string, courseCodes: string[]) =>
+  api.post<CulminationSaveResult>('/admin/config/culmination/save', { programme, courseCodes });
+
+export const getGraduatingProgrammes = () => api.get<string[]>('/admin/config/graduating/programmes');
+export const getGraduatingBatches = (programme: string) =>
+  api.get<number[]>('/admin/config/graduating/batches', { params: { programme } });
+export const getGraduatingStudents = (programme: string, batch: number) =>
+  api.get<GraduatingStudentRow[]>('/admin/config/graduating/students', { params: { programme, batch } });
+export const getGraduatingSelectedIds = (programme: string, batch: number) =>
+  api.get<string[]>('/admin/config/graduating/selected', { params: { programme, batch } });
+export const saveGraduatingStudents = (
+  programme: string,
+  batch: number,
+  graduatingStudentIds: string[],
+  commentsByStudentId: Record<string, string>,
+) =>
+  api.post<GraduatingSaveResult>('/admin/config/graduating/save', {
+    programme,
+    batch,
+    graduatingStudentIds,
+    commentsByStudentId,
+  });
