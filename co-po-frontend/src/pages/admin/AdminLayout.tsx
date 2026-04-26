@@ -27,6 +27,8 @@ const getAdminBreadcrumb = (path: string): string => {
   if (path.startsWith('/admin/graduating-students')) return 'Graduating Students';
   if (path.startsWith('/admin/cohort-po-report')) return 'Cohort PO Report';
   if (path.startsWith('/admin/reports')) return 'View Reports';
+  if (path.startsWith('/admin/change-password')) return 'Change Password';
+  if (path.startsWith('/admin/manage-admins')) return 'Manage Admins';
   return 'Home';
 };
 
@@ -64,8 +66,8 @@ const AdminLayout = () => {
     {
       title: 'ACCOUNT',
       items: [
-        { text: '🔒  Change Password', path: '/admin', enabled: false },
-        { text: '👥  Manage Admins', path: '/admin', enabled: false },
+        { text: '🔒  Change Password', path: '/admin/change-password', enabled: true },
+        { text: '👥  Manage Admins', path: '/admin/manage-admins', enabled: true },
       ],
     },
   ];

@@ -70,6 +70,29 @@ export interface GraduatingSaveResult {
   commentedNonGraduatingCount: number;
 }
 
+export interface AdminProfile {
+  id: number;
+  email: string;
+  isSuperAdmin: boolean;
+  createdBy: string | null;
+  createdAt: string | null;
+}
+
+export interface AdminListItem {
+  id: number;
+  email: string;
+  isSuperAdmin: boolean;
+  createdBy: string | null;
+  createdAt: string | null;
+}
+
+export interface AdminsResponse {
+  admins: AdminListItem[];
+  total: number;
+  superAdmins: number;
+  regularAdmins: number;
+}
+
 // Faculties API
 export const getFaculties = () => api.get<Faculty[]>('/admin/faculties');
 export const createFaculty = (data: Faculty) => api.post<Faculty>('/admin/faculties', data);
@@ -135,3 +158,31 @@ export const saveGraduatingStudents = (
     graduatingStudentIds,
     commentsByStudentId,
   });
+
+// Account APIs
+export const getAdminProfile = () => api.get<AdminProfile>('/admin/account/me');
+
+export const changeAdminPassword = (currentPassword: string, newPassword: string, confirmPassword: string) =>
+  api.post<{ message: string }>('/admin/account/change-password', {
+    currentPassword,
+    newPassword,
+    confirmPassword,
+  });
+
+export const getAdmins = () => api.get<AdminsResponse>('/admin/account/admins');
+
+export const createAdminAccount = (email: string, password: string, confirmPassword: string) =>
+  api.post<AdminListItem>('/admin/account/admins', {
+    email,
+    password,
+    confirmPassword,
+  });
+
+export const deleteAdminAccount = (id: number, currentPassword: string) =>
+  api.post<{ message: string }>(`/admin/account/admins/${id}/delete`, { currentPassword });
+
+export const promoteAdminToSuper = (id: number, currentPassword: string) =>
+  api.post<{ message: string }>(`/admin/account/admins/${id}/promote`, { currentPassword });
+
+export const demoteAdminFromSuper = (id: number, currentPassword: string) =>
+  api.post<{ message: string }>(`/admin/account/admins/${id}/demote`, { currentPassword });

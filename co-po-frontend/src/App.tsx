@@ -14,6 +14,8 @@ import ManageThresholds from './pages/admin/ManageThresholds';
 import ManageGraduatingStudents from './pages/admin/ManageGraduatingStudents';
 import CohortPOReport from './pages/admin/CohortPOReport';
 import ViewReports from './pages/admin/ViewReports';
+import ChangePassword from './pages/admin/ChangePassword';
+import ManageAdmins from './pages/admin/ManageAdmins';
 
 import FacultyLayout from './pages/faculty/FacultyLayout';
 import ManageAssessments from './pages/faculty/ManageAssessments';
@@ -49,6 +51,8 @@ function App() {
           <Route path="graduating-students" element={<ManageGraduatingStudents />} />
           <Route path="cohort-po-report" element={<CohortPOReport />} />
           <Route path="reports" element={<ViewReports />} />
+          <Route path="change-password" element={<ChangePassword />} />
+          <Route path="manage-admins" element={<ManageAdmins />} />
         </Route>
         
         <Route 
