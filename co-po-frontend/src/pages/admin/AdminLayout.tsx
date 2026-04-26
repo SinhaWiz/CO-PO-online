@@ -19,6 +19,9 @@ const getAdminBreadcrumb = (path: string): string => {
   if (path === '/admin' || path === '/admin/dashboard') return 'Home';
   if (path.startsWith('/admin/faculties')) return 'Manage Faculties';
   if (path.startsWith('/admin/students')) return 'Manage Students';
+  if (path.startsWith('/admin/courses')) return 'Manage Courses';
+  if (path.startsWith('/admin/enrollments')) return 'Manage Enrollments';
+  if (path.startsWith('/admin/course-assignments')) return 'Course Assignments';
   return 'Home';
 };
 
@@ -33,9 +36,9 @@ const AdminLayout = () => {
       items: [
         { text: '👤  Manage Faculties', path: '/admin/faculties', enabled: true },
         { text: '🎓  Manage Students', path: '/admin/students', enabled: true },
-        { text: '📚  Manage Courses', path: '/admin', enabled: false },
-        { text: '📝  Manage Enrollments', path: '/admin', enabled: false },
-        { text: '🔗  Course Assignments', path: '/admin', enabled: false },
+        { text: '📚  Manage Courses', path: '/admin/courses', enabled: true },
+        { text: '📝  Manage Enrollments', path: '/admin/enrollments', enabled: true },
+        { text: '🔗  Course Assignments', path: '/admin/course-assignments', enabled: true },
       ],
     },
     {

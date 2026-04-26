@@ -6,27 +6,26 @@ import org.example.copo.entity.Admin;
 import org.example.copo.entity.Faculty;
 import org.example.copo.repository.AdminRepository;
 import org.example.copo.repository.FacultyRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.example.copo.security.JwtTokenProvider;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+
 import java.util.Optional;
-// Basic dummy setup. A real JWT utility class will be integrated next.
+
 @RestController
 @RequestMapping("/api/auth")
+@RequiredArgsConstructor
 public class AuthController {
 
-    @Autowired
-    private AdminRepository adminRepository;
-
-    @Autowired
-    private FacultyRepository facultyRepository;
-
-    @Autowired
-    private PasswordEncoder passwordEncoder;
+    private final AdminRepository adminRepository;
+    private final FacultyRepository facultyRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtTokenProvider jwtTokenProvider;
 
     @PostMapping("/login")
     public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
@@ -38,19 +37,18 @@ public class AuthController {
             Optional<Admin> adminOpt = adminRepository.findByEmail(email);
             if (adminOpt.isPresent()) {
                 Admin admin = adminOpt.get();
-                if (passwordEncoder.matches(rawPassword, admin.getPassword()) || rawPassword.equals(admin.getPassword())) {
-                    // For legacy fallback if pass isn't hashed yet
-                    String dummyToken = "jwt-dummy-token-for-" + email;
-                    return ResponseEntity.ok(new JwtAuthResponse(dummyToken, email, "ROLE_ADMIN", "Admin"));
+                if (matchesPassword(rawPassword, admin.getPassword())) {
+                    String token = jwtTokenProvider.generateToken(email, "ROLE_ADMIN", "Admin");
+                    return ResponseEntity.ok(new JwtAuthResponse(token, email, "ROLE_ADMIN", "Admin"));
                 }
             }
         } else if ("FACULTY".equals(role)) {
             Optional<Faculty> facultyOpt = facultyRepository.findByEmail(email);
             if (facultyOpt.isPresent()) {
                 Faculty faculty = facultyOpt.get();
-                if (passwordEncoder.matches(rawPassword, faculty.getPassword()) || rawPassword.equals(faculty.getPassword())) {
-                    String dummyToken = "jwt-dummy-token-for-" + email;
-                    return ResponseEntity.ok(new JwtAuthResponse(dummyToken, email, "ROLE_FACULTY", faculty.getFullName()));
+                if (matchesPassword(rawPassword, faculty.getPassword())) {
+                    String token = jwtTokenProvider.generateToken(email, "ROLE_FACULTY", faculty.getFullName());
+                    return ResponseEntity.ok(new JwtAuthResponse(token, email, "ROLE_FACULTY", faculty.getFullName()));
                 }
             }
         } else {
@@ -58,5 +56,17 @@ public class AuthController {
         }
 
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid email or password");
+    }
+
+    private boolean matchesPassword(String rawPassword, String storedPassword) {
+        if (storedPassword == null) {
+            return false;
+        }
+
+        if (storedPassword.startsWith("$2a$") || storedPassword.startsWith("$2b$") || storedPassword.startsWith("$2y$")) {
+            return passwordEncoder.matches(rawPassword, storedPassword);
+        }
+
+        return rawPassword.equals(storedPassword);
     }
 }

@@ -6,6 +6,9 @@ import { AuthProvider } from './context/AuthContext';
 import AdminLayout from './pages/admin/AdminLayout';
 import ManageFaculties from './pages/admin/ManageFaculties';
 import ManageStudents from './pages/admin/ManageStudents';
+import ManageCourses from './pages/admin/ManageCourses';
+import ManageEnrollments from './pages/admin/ManageEnrollments';
+import ManageCourseAssignments from './pages/admin/ManageCourseAssignments';
 
 import FacultyLayout from './pages/faculty/FacultyLayout';
 import ManageAssessments from './pages/faculty/ManageAssessments';
@@ -33,6 +36,9 @@ function App() {
           <Route path="dashboard" element={<AdminDashboardHome />} />
           <Route path="faculties" element={<ManageFaculties />} />
           <Route path="students" element={<ManageStudents />} />
+          <Route path="courses" element={<ManageCourses />} />
+          <Route path="enrollments" element={<ManageEnrollments />} />
+          <Route path="course-assignments" element={<ManageCourseAssignments />} />
         </Route>
         
         <Route 
