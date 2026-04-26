@@ -12,6 +12,8 @@ import ManageCourseAssignments from './pages/admin/ManageCourseAssignments';
 import ManageCulminationCourses from './pages/admin/ManageCulminationCourses';
 import ManageThresholds from './pages/admin/ManageThresholds';
 import ManageGraduatingStudents from './pages/admin/ManageGraduatingStudents';
+import CohortPOReport from './pages/admin/CohortPOReport';
+import ViewReports from './pages/admin/ViewReports';
 
 import FacultyLayout from './pages/faculty/FacultyLayout';
 import ManageAssessments from './pages/faculty/ManageAssessments';
@@ -45,6 +47,8 @@ function App() {
           <Route path="culmination-courses" element={<ManageCulminationCourses />} />
           <Route path="thresholds" element={<ManageThresholds />} />
           <Route path="graduating-students" element={<ManageGraduatingStudents />} />
+          <Route path="cohort-po-report" element={<CohortPOReport />} />
+          <Route path="reports" element={<ViewReports />} />
         </Route>
         
         <Route 

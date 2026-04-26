@@ -25,6 +25,8 @@ const getAdminBreadcrumb = (path: string): string => {
   if (path.startsWith('/admin/culmination-courses')) return 'Culmination Courses';
   if (path.startsWith('/admin/thresholds')) return 'Manage Thresholds';
   if (path.startsWith('/admin/graduating-students')) return 'Graduating Students';
+  if (path.startsWith('/admin/cohort-po-report')) return 'Cohort PO Report';
+  if (path.startsWith('/admin/reports')) return 'View Reports';
   return 'Home';
 };
 
@@ -55,8 +57,8 @@ const AdminLayout = () => {
     {
       title: 'REPORTS',
       items: [
-        { text: '📊  Cohort PO Report', path: '/admin', enabled: false },
-        { text: '📈  View Reports', path: '/admin', enabled: false },
+        { text: '📊  Cohort PO Report', path: '/admin/cohort-po-report', enabled: true },
+        { text: '📈  View Reports', path: '/admin/reports', enabled: true },
       ],
     },
     {
