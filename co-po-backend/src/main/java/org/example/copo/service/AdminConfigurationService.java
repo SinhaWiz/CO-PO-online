@@ -19,6 +19,44 @@ public class AdminConfigurationService {
 
     public AdminConfigurationService(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
+        ensureConfigTables();
+    }
+
+    private void ensureConfigTables() {
+        jdbcTemplate.execute("""
+            CREATE TABLE IF NOT EXISTS Thresholds (
+                type VARCHAR(25) PRIMARY KEY,
+                percentage DECIMAL(4,2)
+            )
+            """);
+
+        jdbcTemplate.update("INSERT IGNORE INTO Thresholds (type, percentage) VALUES ('CO_INDIVIDUAL', 60.00)");
+        jdbcTemplate.update("INSERT IGNORE INTO Thresholds (type, percentage) VALUES ('PO_INDIVIDUAL', 40.00)");
+        jdbcTemplate.update("INSERT IGNORE INTO Thresholds (type, percentage) VALUES ('CO_COHORTSET', 50.00)");
+        jdbcTemplate.update("INSERT IGNORE INTO Thresholds (type, percentage) VALUES ('PO_COHORTSET', 50.00)");
+
+        jdbcTemplate.execute("""
+            CREATE TABLE IF NOT EXISTS CulminationCourse (
+                course_code VARCHAR(20),
+                programme VARCHAR(11)
+            )
+            """);
+
+        jdbcTemplate.execute("""
+            CREATE TABLE IF NOT EXISTS GraduatingStudent (
+                id VARCHAR(9) PRIMARY KEY
+            )
+            """);
+
+        jdbcTemplate.execute("""
+            CREATE TABLE IF NOT EXISTS NonGraduatingStudentComment (
+                student_id VARCHAR(9) NOT NULL,
+                programme VARCHAR(11) NOT NULL,
+                batch INT NOT NULL,
+                comment TEXT,
+                PRIMARY KEY (student_id, programme, batch)
+            )
+            """);
     }
 
     public record ThresholdsDto(double coIndividual, double poIndividual, double coCohort, double poCohort) {}
@@ -28,6 +66,7 @@ public class AdminConfigurationService {
     public record GraduatingSaveResult(int graduatingCount, int commentedNonGraduatingCount) {}
 
     public ThresholdsDto getThresholds() {
+        ensureConfigTables();
         String sql = "SELECT type, percentage FROM Thresholds";
         Map<String, Double> values = new HashMap<>();
         List<Map<String, Object>> rows = jdbcTemplate.queryForList(sql);
@@ -49,6 +88,7 @@ public class AdminConfigurationService {
 
     @Transactional
     public void updateThresholds(ThresholdsDto dto) {
+        ensureConfigTables();
         upsertThreshold("CO_INDIVIDUAL", dto.coIndividual());
         upsertThreshold("PO_INDIVIDUAL", dto.poIndividual());
         upsertThreshold("CO_COHORTSET", dto.coCohort());
@@ -63,11 +103,13 @@ public class AdminConfigurationService {
     }
 
     public List<String> getDistinctProgrammesFromCourses() {
+        ensureConfigTables();
         String sql = "SELECT DISTINCT programme FROM Course WHERE programme IS NOT NULL AND programme<>'' ORDER BY programme";
         return jdbcTemplate.query(sql, (rs, rowNum) -> rs.getString(1));
     }
 
     public List<CourseDisplayDto> getCoursesForProgramme(String programme) {
+        ensureConfigTables();
         String sql = "SELECT course_code, course_name FROM Course WHERE programme=? ORDER BY course_code";
         return jdbcTemplate.query(sql, (rs, rowNum) -> {
             String code = rs.getString("course_code");
@@ -77,11 +119,13 @@ public class AdminConfigurationService {
     }
 
     public List<String> getCulminationCourses(String programme) {
+        ensureConfigTables();
         String sql = "SELECT course_code FROM CulminationCourse WHERE programme=? ORDER BY course_code";
         return jdbcTemplate.query(sql, (rs, rowNum) -> rs.getString(1), programme);
     }
 
     public List<String> getMissingPOsForCourses(String programme, List<String> courseCodes, int totalPOs) {
+        ensureConfigTables();
         if (courseCodes == null || courseCodes.isEmpty()) {
             List<String> missing = new ArrayList<>();
             for (int i = 1; i <= Math.min(totalPOs, 12); i++) {
@@ -111,6 +155,7 @@ public class AdminConfigurationService {
 
     @Transactional
     public CulminationSaveResult saveCulminationCourses(String programme, List<String> courseCodes) {
+        ensureConfigTables();
         List<String> normalized = courseCodes == null ? List.of() : new ArrayList<>(new LinkedHashSet<>(courseCodes));
 
         List<String> missing = getMissingPOsForCourses(programme, normalized, 12);
@@ -131,16 +176,19 @@ public class AdminConfigurationService {
     }
 
     public List<String> getDistinctProgrammesFromStudents() {
+        ensureConfigTables();
         String sql = "SELECT DISTINCT programme FROM Student WHERE programme IS NOT NULL AND programme<>'' ORDER BY programme";
         return jdbcTemplate.query(sql, (rs, rowNum) -> rs.getString(1));
     }
 
     public List<Integer> getBatchesForProgramme(String programme) {
+        ensureConfigTables();
         String sql = "SELECT DISTINCT batch FROM Student WHERE programme=? ORDER BY batch";
         return jdbcTemplate.query(sql, (rs, rowNum) -> rs.getInt(1), programme);
     }
 
     public List<StudentRowDto> getStudentsByProgrammeAndBatch(String programme, int batch) {
+        ensureConfigTables();
         String sql = """
             SELECT s.id, s.name, COALESCE(ng.comment, '') AS comment
             FROM Student s
@@ -158,6 +206,7 @@ public class AdminConfigurationService {
     }
 
     public List<String> getGraduatingStudentIds(String programme, int batch) {
+        ensureConfigTables();
         String sql = "SELECT gs.id FROM GraduatingStudent gs JOIN Student s ON s.id=gs.id WHERE s.programme=? AND s.batch=? ORDER BY gs.id";
         return jdbcTemplate.query(sql, (rs, rowNum) -> rs.getString(1), programme, batch);
     }
@@ -169,6 +218,7 @@ public class AdminConfigurationService {
         List<String> graduatingStudentIds,
         Map<String, String> commentsByStudentId
     ) {
+        ensureConfigTables();
         List<String> cohortIds = jdbcTemplate.query(
             "SELECT id FROM Student WHERE programme=? AND batch=?",
             (rs, rowNum) -> rs.getString(1),
