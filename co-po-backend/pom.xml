@@ -67,6 +67,17 @@
             <scope>runtime</scope>
         </dependency>
 
+        <!-- Schema migrations: the backend owns its schema now instead of assuming
+             the desktop app's schema.sql has been run by hand against the DB. -->
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-mysql</artifactId>
+        </dependency>
+
         <!-- Lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>

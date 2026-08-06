@@ -16,6 +16,15 @@ spring:
       hibernate:
         format_sql: true
 
+  flyway:
+    enabled: true
+    # Lets Flyway adopt a database that already has these tables (e.g. a dev DB set up
+    # by hand from the desktop app's schema.sql before this migration existed) without
+    # trying to re-run V1's CREATE TABLEs against it. Has no effect on a genuinely
+    # empty database - Flyway just runs V1 normally there.
+    baseline-on-migrate: true
+    baseline-version: 0
+
 jwt:
   secret: ${JWT_SECRET:1fc051ff98d769ef846ab7905a14740d39dc0d8f8e8aab9f088cd1541c232eee}
   expiration: 86400000 # 1 day in ms
