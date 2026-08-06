@@ -5,11 +5,15 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.example.copo.entity.Assessment;
+import org.example.copo.entity.CO;
 import org.example.copo.entity.CourseAssessmentSection;
+import org.example.copo.entity.PO;
 import org.example.copo.entity.StudentAssessmentMarks;
 import org.example.copo.service.AssessmentService;
 import org.example.copo.service.CourseAssessmentSectionService;
+import org.example.copo.service.CourseOutcomeService;
 import org.example.copo.service.FacultyAssessmentService;
+import org.example.copo.service.OutcomeService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -25,6 +29,8 @@ public class FacultyAssessmentController {
     private final FacultyAssessmentService assessmentService;
     private final CourseAssessmentSectionService sectionService;
     private final AssessmentService instanceService;
+    private final OutcomeService outcomeService;
+    private final CourseOutcomeService courseOutcomeService;
 
     public record ResolveInstanceRequest(@NotNull Integer sectionId, @NotBlank String academicYear) {}
 
@@ -92,5 +98,28 @@ public class FacultyAssessmentController {
     @PostMapping("/instances")
     public ResponseEntity<Assessment> resolveAssessmentInstance(@Valid @RequestBody ResolveInstanceRequest request) {
         return ResponseEntity.ok(instanceService.getOrCreate(request.sectionId(), request.academicYear()));
+    }
+
+    // Read-only faculty access to the CO/PO master lists and a course's allow-list -
+    // these lived only under /api/admin/**, which faculty tokens are locked out of at
+    // the security filter chain, so a faculty-facing CO/PO picker had nothing to call.
+    @PreAuthorize("hasRole('FACULTY')")
+    @GetMapping("/outcomes/co")
+    public ResponseEntity<List<CO>> getAllCOs() {
+        return ResponseEntity.ok(outcomeService.getAllCOs());
+    }
+
+    @PreAuthorize("hasRole('FACULTY')")
+    @GetMapping("/outcomes/po")
+    public ResponseEntity<List<PO>> getAllPOs() {
+        return ResponseEntity.ok(outcomeService.getAllPOs());
+    }
+
+    @PreAuthorize("hasRole('FACULTY')")
+    @GetMapping("/outcomes/{courseCode}/{programme}")
+    public ResponseEntity<CourseOutcomeService.CourseOutcomesDto> getCourseOutcomes(
+        @PathVariable String courseCode, @PathVariable String programme
+    ) {
+        return ResponseEntity.ok(courseOutcomeService.getCourseOutcomes(courseCode, programme));
     }
 }
