@@ -3,6 +3,10 @@ import {
   Alert,
   Box,
   Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   FormControl,
   InputLabel,
   MenuItem,
@@ -20,14 +24,19 @@ import {
 import {
   createCourseAssignment,
   deleteCourseAssignment,
+  getAssignmentThresholds,
   getCourseAssignments,
   getCourses,
   getFaculties,
+  updateAssignmentThresholds,
   type Course,
   type CourseAssignment,
   type Faculty,
+  type Thresholds,
 } from '../../api/admin';
 import { useConfirmDialog } from '../../components/ConfirmDialog';
+
+const defaultThresholds: Thresholds = { coIndividual: 60, poIndividual: 40, coCohort: 50, poCohort: 50 };
 
 const ACADEMIC_YEAR_REGEX = /^\d{4}-\d{4}$/;
 
@@ -55,9 +64,14 @@ const ManageCourseAssignments = () => {
   const [selectedCourseKey, setSelectedCourseKey] = useState('');
   const [selectedFacultyId, setSelectedFacultyId] = useState('');
   const [academicYear, setAcademicYear] = useState('');
+  const [initialThresholds, setInitialThresholds] = useState<Thresholds>(defaultThresholds);
 
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const { confirm, ConfirmDialog } = useConfirmDialog();
+
+  const [thresholdDialogRow, setThresholdDialogRow] = useState<CourseAssignment | null>(null);
+  const [editingThresholds, setEditingThresholds] = useState<Thresholds>(defaultThresholds);
+  const [thresholdsSaving, setThresholdsSaving] = useState(false);
 
   const loadData = async () => {
     try {
@@ -143,6 +157,7 @@ const ManageCourseAssignments = () => {
     setSelectedCourseKey('');
     setSelectedFacultyId('');
     setAcademicYear('');
+    setInitialThresholds(defaultThresholds);
   };
 
   const handleAssign = async () => {
@@ -180,12 +195,53 @@ const ManageCourseAssignments = () => {
         academicYear,
         department: selectedCourse.department,
       });
+      // Creating the assignment already seeds default (60/40/50/50) thresholds
+      // server-side - this just overwrites them with whatever the admin chose here,
+      // in the same action rather than a separate edit step afterward.
+      await updateAssignmentThresholds(
+        selectedCourse.courseCode, selectedCourse.programme, academicYear, selectedCourse.department, initialThresholds,
+      );
       setMessage({ type: 'success', text: 'Course assignment created successfully.' });
       clearAssignForm();
       loadData();
     } catch (error) {
       console.error('Failed to assign course', error);
       setMessage({ type: 'error', text: 'Failed to assign course. Please check duplicates and inputs.' });
+    }
+  };
+
+  const openThresholdDialog = async (row: CourseAssignment) => {
+    setThresholdDialogRow(row);
+    try {
+      const res = await getAssignmentThresholds(row.courseCode, row.programme, row.academicYear, row.department);
+      setEditingThresholds(res.data);
+    } catch (error) {
+      console.error('Failed to load thresholds', error);
+      setEditingThresholds(defaultThresholds);
+    }
+  };
+
+  const closeThresholdDialog = () => {
+    setThresholdDialogRow(null);
+    setEditingThresholds(defaultThresholds);
+  };
+
+  const handleSaveThresholds = async () => {
+    if (!thresholdDialogRow) return;
+    setThresholdsSaving(true);
+    try {
+      await updateAssignmentThresholds(
+        thresholdDialogRow.courseCode, thresholdDialogRow.programme,
+        thresholdDialogRow.academicYear, thresholdDialogRow.department,
+        editingThresholds,
+      );
+      setMessage({ type: 'success', text: 'Thresholds updated successfully.' });
+      closeThresholdDialog();
+    } catch (error: any) {
+      const text = error?.response?.data?.message || 'Failed to update thresholds.';
+      setMessage({ type: 'error', text });
+    } finally {
+      setThresholdsSaving(false);
     }
   };
 
@@ -273,6 +329,40 @@ const ManageCourseAssignments = () => {
             </Button>
           </Box>
         </Box>
+
+        <Typography sx={{ fontSize: 13, fontWeight: 700, color: '#64748b', mt: 2, mb: 1 }}>
+          INITIAL THRESHOLDS (the assigned faculty can adjust these later)
+        </Typography>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', lg: 'repeat(4, 1fr)' }, gap: 1.5 }}>
+          <TextField
+            label="CO Individual %"
+            type="number"
+            size="small"
+            value={initialThresholds.coIndividual}
+            onChange={(e) => setInitialThresholds({ ...initialThresholds, coIndividual: Number(e.target.value) })}
+          />
+          <TextField
+            label="PO Individual %"
+            type="number"
+            size="small"
+            value={initialThresholds.poIndividual}
+            onChange={(e) => setInitialThresholds({ ...initialThresholds, poIndividual: Number(e.target.value) })}
+          />
+          <TextField
+            label="CO Cohort %"
+            type="number"
+            size="small"
+            value={initialThresholds.coCohort}
+            onChange={(e) => setInitialThresholds({ ...initialThresholds, coCohort: Number(e.target.value) })}
+          />
+          <TextField
+            label="PO Cohort %"
+            type="number"
+            size="small"
+            value={initialThresholds.poCohort}
+            onChange={(e) => setInitialThresholds({ ...initialThresholds, poCohort: Number(e.target.value) })}
+          />
+        </Box>
       </Paper>
 
       <Paper sx={{ p: 2, mb: 2 }}>
@@ -353,15 +443,62 @@ const ManageCourseAssignments = () => {
                 <TableCell>{row.department}</TableCell>
                 <TableCell>{row.programme}</TableCell>
                 <TableCell>
-                  <Button color="error" variant="contained" onClick={() => handleRemove(row)}>
-                    Remove
-                  </Button>
+                  <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                    <Button variant="outlined" onClick={() => openThresholdDialog(row)}>
+                      Thresholds
+                    </Button>
+                    <Button color="error" variant="contained" onClick={() => handleRemove(row)}>
+                      Remove
+                    </Button>
+                  </Box>
                 </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </TableContainer>
+
+      <Dialog open={thresholdDialogRow !== null} onClose={closeThresholdDialog} maxWidth="xs" fullWidth>
+        <DialogTitle>
+          Thresholds{thresholdDialogRow ? ` - ${thresholdDialogRow.courseCode} (${thresholdDialogRow.academicYear})` : ''}
+        </DialogTitle>
+        <DialogContent sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.5, pt: 1 }}>
+          <TextField
+            label="CO Individual %"
+            type="number"
+            size="small"
+            value={editingThresholds.coIndividual}
+            onChange={(e) => setEditingThresholds({ ...editingThresholds, coIndividual: Number(e.target.value) })}
+          />
+          <TextField
+            label="PO Individual %"
+            type="number"
+            size="small"
+            value={editingThresholds.poIndividual}
+            onChange={(e) => setEditingThresholds({ ...editingThresholds, poIndividual: Number(e.target.value) })}
+          />
+          <TextField
+            label="CO Cohort %"
+            type="number"
+            size="small"
+            value={editingThresholds.coCohort}
+            onChange={(e) => setEditingThresholds({ ...editingThresholds, coCohort: Number(e.target.value) })}
+          />
+          <TextField
+            label="PO Cohort %"
+            type="number"
+            size="small"
+            value={editingThresholds.poCohort}
+            onChange={(e) => setEditingThresholds({ ...editingThresholds, poCohort: Number(e.target.value) })}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeThresholdDialog}>Cancel</Button>
+          <Button onClick={handleSaveThresholds} variant="contained" disabled={thresholdsSaving}>
+            {thresholdsSaving ? 'Saving...' : 'Save'}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {ConfirmDialog}
     </Box>

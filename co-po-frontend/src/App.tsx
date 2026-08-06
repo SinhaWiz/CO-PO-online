@@ -21,6 +21,7 @@ import ManageAdmins from './pages/admin/ManageAdmins';
 import FacultyLayout from './pages/faculty/FacultyLayout';
 import ManageAssessments from './pages/faculty/ManageAssessments';
 import EnterMarks from './pages/faculty/EnterMarks';
+import ManageCourseThresholds from './pages/faculty/ManageCourseThresholds';
 import FacultyChangePassword from './pages/faculty/ChangePassword';
 
 // Components
@@ -70,6 +71,7 @@ function App() {
           <Route path="dashboard" element={<FacultyDashboardHome />} />
           <Route path="assessments" element={<ManageAssessments />} />
           <Route path="marks" element={<EnterMarks />} />
+          <Route path="thresholds" element={<ManageCourseThresholds />} />
           <Route path="change-password" element={<FacultyChangePassword />} />
         </Route>
 

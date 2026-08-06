@@ -19,6 +19,7 @@ const getFacultyBreadcrumb = (path: string): string => {
   if (path === '/faculty' || path === '/faculty/dashboard') return 'Home';
   if (path.startsWith('/faculty/assessments')) return 'Course Questions';
   if (path.startsWith('/faculty/marks')) return 'Student Marks';
+  if (path.startsWith('/faculty/thresholds')) return 'Course Thresholds';
   if (path.startsWith('/faculty/change-password')) return 'Change Password';
   return 'Home';
 };
@@ -37,7 +38,7 @@ const FacultyLayout = () => {
         { text: '📝  Course Questions', path: '/faculty/assessments', enabled: true },
         { text: '✏️  Student Marks', path: '/faculty/marks', enabled: true },
         { text: '📋  View Results', path: '/faculty', enabled: false },
-        { text: '⚙️  Course Thresholds', path: '/faculty', enabled: false },
+        { text: '⚙️  Course Thresholds', path: '/faculty/thresholds', enabled: true },
       ],
     },
     {

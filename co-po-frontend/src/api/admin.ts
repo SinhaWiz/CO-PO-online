@@ -181,6 +181,15 @@ export const deleteCourseAssignment = (courseCode: string, programme: string, ac
     `/admin/assignments/${encodeURIComponent(courseCode)}/${encodeURIComponent(programme)}/${encodeURIComponent(academicYear)}/${encodeURIComponent(department)}`,
   );
 
+const assignmentThresholdsUrl = (courseCode: string, programme: string, academicYear: string, department: string) =>
+  `/admin/assignments/${encodeURIComponent(courseCode)}/${encodeURIComponent(programme)}/${encodeURIComponent(academicYear)}/${encodeURIComponent(department)}/thresholds`;
+
+export const getAssignmentThresholds = (courseCode: string, programme: string, academicYear: string, department: string) =>
+  api.get<Thresholds>(assignmentThresholdsUrl(courseCode, programme, academicYear, department));
+export const updateAssignmentThresholds = (
+  courseCode: string, programme: string, academicYear: string, department: string, data: Thresholds,
+) => api.put<Thresholds>(assignmentThresholdsUrl(courseCode, programme, academicYear, department), data);
+
 // Configuration APIs
 export const getThresholds = () => api.get<Thresholds>('/admin/config/thresholds');
 export const updateThresholds = (data: Thresholds) => api.put('/admin/config/thresholds', data);

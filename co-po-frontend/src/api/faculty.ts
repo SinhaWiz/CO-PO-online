@@ -95,3 +95,19 @@ export const getFacultyCOs = () => api.get<{ id: number; coNumber: string }[]>('
 export const getFacultyPOs = () => api.get<{ id: number; poNumber: string }[]>('/faculty/assessments/outcomes/po');
 export const getFacultyCourseOutcomes = (courseCode: string, programme: string) =>
   api.get<CourseOutcomeIds>(`/faculty/assessments/outcomes/${encodeURIComponent(courseCode)}/${encodeURIComponent(programme)}`);
+
+export interface Thresholds {
+  coIndividual: number;
+  poIndividual: number;
+  coCohort: number;
+  poCohort: number;
+}
+
+const facultyAssignmentThresholdsUrl = (courseCode: string, programme: string, academicYear: string, department: string) =>
+  `/faculty/assignments/${encodeURIComponent(courseCode)}/${encodeURIComponent(programme)}/${encodeURIComponent(academicYear)}/${encodeURIComponent(department)}/thresholds`;
+
+export const getMyAssignmentThresholds = (courseCode: string, programme: string, academicYear: string, department: string) =>
+  api.get<Thresholds>(facultyAssignmentThresholdsUrl(courseCode, programme, academicYear, department));
+export const updateMyAssignmentThresholds = (
+  courseCode: string, programme: string, academicYear: string, department: string, data: Thresholds,
+) => api.put<Thresholds>(facultyAssignmentThresholdsUrl(courseCode, programme, academicYear, department), data);
