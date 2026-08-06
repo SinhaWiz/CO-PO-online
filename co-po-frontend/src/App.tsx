@@ -25,6 +25,7 @@ import ManageCourseThresholds from './pages/faculty/ManageCourseThresholds';
 import FacultyChangePassword from './pages/faculty/ChangePassword';
 import COReport from './pages/faculty/COReport';
 import POReport from './pages/faculty/POReport';
+import CourseReport from './pages/faculty/CourseReport';
 
 // Components
 import AdminDashboardHome from './pages/admin/AdminDashboardHome';
@@ -76,6 +77,7 @@ function App() {
           <Route path="thresholds" element={<ManageCourseThresholds />} />
           <Route path="reports/co" element={<COReport />} />
           <Route path="reports/po" element={<POReport />} />
+          <Route path="reports/course" element={<CourseReport />} />
           <Route path="change-password" element={<FacultyChangePassword />} />
         </Route>
 

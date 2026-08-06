@@ -163,3 +163,116 @@ export const downloadFacultyReport = async (type: string, name: string) => {
   });
   return response.data;
 };
+
+export interface GradeRow {
+  letter: string;
+  count: number;
+}
+
+export interface CoAttainmentRow {
+  coCode: string;
+  maxMarks: number;
+  studentsAttained: number;
+  attainmentPercent: number;
+  remarks: string;
+}
+
+export interface TopicRow {
+  topic: string;
+  hours: number;
+  instructor: string;
+}
+
+export interface AssessmentMethodRow {
+  method: string;
+  percent: number;
+  readOnly: boolean;
+}
+
+export interface ActionPlanRow {
+  action: string;
+  completionDate: string;
+  responsible: string;
+}
+
+// A faithful (if large) port of the desktop app's Course Report form - it's a
+// self-assessment document, so almost every field here is free text or a manually
+// typed number rather than something computed from marks.
+export interface CourseReportForm {
+  lectureHours: string;
+  tutorialHours: string;
+  practicalHours: string;
+  instructors: string;
+  hodName: string;
+  studentsCompleting: string;
+  percentPassed: string;
+  percentFailed: string;
+  gradeDistribution: GradeRow[];
+  coAttainment: CoAttainmentRow[];
+  topics: TopicRow[];
+  coverageLevel: string;
+  topicDeviation: string;
+  methodLectures: boolean;
+  methodLab: boolean;
+  methodSeminar: boolean;
+  methodActivity: boolean;
+  methodCaseStudy: boolean;
+  methodAssignment: boolean;
+  otherMethods: string;
+  assessmentMethods: AssessmentMethodRow[];
+  facilitiesLevel: string;
+  inadequacies: string;
+  adminConstraints: string;
+  studentCriticism: string;
+  moderatorComments: string;
+  externalComments: string;
+  enhancementProgress: string;
+  actionPlan: ActionPlanRow[];
+  thresholdOverride: string;
+}
+
+// Auto-filled values the form seeds itself with - course info, enrolled count, the
+// course's configured CO codes, the fixed letter-grade set, this assignment's
+// threshold default, next year's label for the action-plan heading, and the 6 fixed
+// assessment-method row names. Everything else in the form starts blank/zero.
+export interface CourseReportSeed {
+  courseName: string;
+  credits: number | null;
+  semester: string;
+  department: string;
+  totalStudents: number;
+  instructorDefault: string;
+  coCodes: string[];
+  letterGrades: string[];
+  coCohortThresholdDefault: number;
+  nextAcademicYear: string;
+  assessmentMethodDefaults: AssessmentMethodRow[];
+}
+
+export interface CourseReportContext {
+  seed: CourseReportSeed;
+  draft: CourseReportForm | null;
+  updatedAt: string | null;
+}
+
+export interface GenerateCourseReportResult {
+  pdfFileName: string | null;
+  issues: string[];
+}
+
+const courseReportUrl = (courseCode: string, programme: string, academicYear: string, department: string) =>
+  `/faculty/course-report/${encodeURIComponent(courseCode)}/${encodeURIComponent(programme)}/${encodeURIComponent(academicYear)}/${encodeURIComponent(department)}`;
+
+export const getCourseReportContext = (courseCode: string, programme: string, academicYear: string, department: string) =>
+  api.get<CourseReportContext>(courseReportUrl(courseCode, programme, academicYear, department));
+
+export const saveCourseReportDraft = (
+  courseCode: string, programme: string, academicYear: string, department: string, form: CourseReportForm,
+) => api.put<{ updatedAt: string }>(courseReportUrl(courseCode, programme, academicYear, department), form);
+
+export const clearCourseReportDraft = (courseCode: string, programme: string, academicYear: string, department: string) =>
+  api.delete(courseReportUrl(courseCode, programme, academicYear, department));
+
+export const generateCourseReport = (
+  courseCode: string, programme: string, academicYear: string, department: string, form: CourseReportForm,
+) => api.post<GenerateCourseReportResult>(`${courseReportUrl(courseCode, programme, academicYear, department)}/generate`, form);

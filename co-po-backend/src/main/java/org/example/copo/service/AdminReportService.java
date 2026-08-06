@@ -238,6 +238,7 @@ public class AdminReportService {
         List<ReportFileDto> files = new ArrayList<>();
         files.addAll(scanDir(resolveReportDir("co_reports"), "CO"));
         files.addAll(scanDir(resolveReportDir("po_reports"), "PO"));
+        files.addAll(scanDir(resolveReportDir("course_reports"), "Course"));
         files.addAll(scanDir(resolveReportDir("detailed_marks_reports"), "Detailed"));
         files.addAll(scanDir(resolveReportDir("cohort_po_reports"), "Cohort PO"));
         files.sort(Comparator.comparing(ReportFileDto::type).thenComparing(ReportFileDto::name));
@@ -248,6 +249,7 @@ public class AdminReportService {
         Path dir = switch (type) {
             case "CO" -> resolveReportDir("co_reports");
             case "PO" -> resolveReportDir("po_reports");
+            case "Course" -> resolveReportDir("course_reports");
             case "Detailed" -> resolveReportDir("detailed_marks_reports");
             case "Cohort PO" -> resolveReportDir("cohort_po_reports");
             default -> null;
