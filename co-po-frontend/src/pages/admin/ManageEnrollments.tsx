@@ -28,6 +28,7 @@ import {
   type Enrollment,
   type Student,
 } from '../../api/admin';
+import { useConfirmDialog } from '../../components/ConfirmDialog';
 
 const ACADEMIC_YEAR_REGEX = /^\d{4}-\d{4}$/;
 
@@ -51,6 +52,7 @@ const ManageEnrollments = () => {
   const [academicYear, setAcademicYear] = useState('');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const { confirm, ConfirmDialog } = useConfirmDialog();
 
   const loadData = async () => {
     try {
@@ -220,8 +222,9 @@ const ManageEnrollments = () => {
       return;
     }
 
-    const ok = window.confirm(
+    const ok = await confirm(
       `Unenroll ${enrolledSelected.length} students from ${selectedCourse.courseCode} (${academicYear})?`,
+      { title: 'Unenroll Students', confirmLabel: 'Unenroll', confirmColor: 'error' },
     );
     if (!ok) return;
 
@@ -397,6 +400,8 @@ const ManageEnrollments = () => {
           </TableBody>
         </Table>
       </TableContainer>
+
+      {ConfirmDialog}
     </Box>
   );
 };

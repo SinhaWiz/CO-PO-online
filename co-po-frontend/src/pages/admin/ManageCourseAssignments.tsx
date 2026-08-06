@@ -27,6 +27,7 @@ import {
   type CourseAssignment,
   type Faculty,
 } from '../../api/admin';
+import { useConfirmDialog } from '../../components/ConfirmDialog';
 
 const ACADEMIC_YEAR_REGEX = /^\d{4}-\d{4}$/;
 
@@ -56,6 +57,7 @@ const ManageCourseAssignments = () => {
   const [academicYear, setAcademicYear] = useState('');
 
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const { confirm, ConfirmDialog } = useConfirmDialog();
 
   const loadData = async () => {
     try {
@@ -188,8 +190,9 @@ const ManageCourseAssignments = () => {
   };
 
   const handleRemove = async (row: CourseAssignment) => {
-    const ok = window.confirm(
+    const ok = await confirm(
       `Remove assignment for ${row.courseCode} (${row.programme}) in ${row.academicYear}?`,
+      { title: 'Remove Assignment', confirmLabel: 'Remove', confirmColor: 'error' },
     );
     if (!ok) return;
 
@@ -359,6 +362,8 @@ const ManageCourseAssignments = () => {
           </TableBody>
         </Table>
       </TableContainer>
+
+      {ConfirmDialog}
     </Box>
   );
 };

@@ -20,6 +20,7 @@ import {
   updateCourse,
   type Course,
 } from '../../api/admin';
+import { useConfirmDialog } from '../../components/ConfirmDialog';
 
 const COURSE_CODE_REGEX = /^[A-Z]{3}\s\d{4}$/;
 const DEPARTMENT_REGEX = /^[A-Z]{3}$/;
@@ -38,6 +39,7 @@ const ManageCourses = () => {
   const [form, setForm] = useState<Course>(defaultForm);
   const [editingKey, setEditingKey] = useState<string | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const { confirm, ConfirmDialog } = useConfirmDialog();
 
   const sortedCourses = useMemo(
     () =>
@@ -127,8 +129,9 @@ const ManageCourses = () => {
   };
 
   const handleDelete = async (course: Course) => {
-    const ok = window.confirm(
+    const ok = await confirm(
       `Remove course ${course.courseCode} (${course.programme})? This action cannot be undone.`,
+      { title: 'Remove Course', confirmLabel: 'Remove', confirmColor: 'error' },
     );
     if (!ok) return;
 
@@ -240,6 +243,8 @@ const ManageCourses = () => {
           </TableBody>
         </Table>
       </TableContainer>
+
+      {ConfirmDialog}
     </Box>
   );
 };

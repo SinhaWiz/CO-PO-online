@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Create Axios backend instance
 const api = axios.create({
-  baseURL: 'http://localhost:8080/api', // Adjust base URL based on spring boot server config
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -27,7 +27,6 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response && error.response.status === 401) {
-      // Clear token and redirect to login if unauthorized
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       window.location.href = '/login';

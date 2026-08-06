@@ -29,6 +29,7 @@ import {
   saveGraduatingStudents,
   type GraduatingStudentRow,
 } from '../../api/admin';
+import { useConfirmDialog } from '../../components/ConfirmDialog';
 
 const ManageGraduatingStudents = () => {
   const [programmes, setProgrammes] = useState<string[]>([]);
@@ -45,6 +46,7 @@ const ManageGraduatingStudents = () => {
 
   const [status, setStatus] = useState('');
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const { confirm, ConfirmDialog } = useConfirmDialog();
 
   const loadProgrammes = async () => {
     try {
@@ -155,7 +157,7 @@ const ManageGraduatingStudents = () => {
     [allStudents, selectedGraduatingIds],
   );
 
-  const handleAddSelected = () => {
+  const handleAddSelected = async () => {
     if (pickedAvailableIds.size === 0) return;
 
     const movingWithComments = availableNonGraduating.filter(
@@ -164,8 +166,9 @@ const ManageGraduatingStudents = () => {
 
     if (movingWithComments.length > 0) {
       const details = movingWithComments.map((s) => `${s.id} - ${s.name}`).join('\n');
-      const ok = window.confirm(
+      const ok = await confirm(
         `The following students have comments explaining why they are not graduating:\n${details}\n\nMark them as graduating? Comments will be preserved until Save.`,
+        { title: 'Mark as Graduating', confirmLabel: 'Mark as Graduating' },
       );
       if (!ok) return;
     }
@@ -215,8 +218,9 @@ const ManageGraduatingStudents = () => {
       return;
     }
 
-    const ok = window.confirm(
+    const ok = await confirm(
       `Save ${selectedGraduatingIds.size} graduating students?\nComments for graduating students will be removed from database.`,
+      { title: 'Save Graduating Students', confirmLabel: 'Save' },
     );
     if (!ok) return;
 
@@ -343,6 +347,8 @@ const ManageGraduatingStudents = () => {
       </Box>
 
       <Typography sx={{ mt: 2, color: '#64748b' }}>{status}</Typography>
+
+      {ConfirmDialog}
     </Box>
   );
 };
