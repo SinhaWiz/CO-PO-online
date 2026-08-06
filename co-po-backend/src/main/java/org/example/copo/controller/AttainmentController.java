@@ -28,4 +28,16 @@ public class AttainmentController {
             attainmentService.getCoAttainment(authentication.getName(), courseCode, programme, academicYear, department)
         );
     }
+
+    @PreAuthorize("hasRole('FACULTY')")
+    @GetMapping("/po/{courseCode}/{programme}/{academicYear}/{department}")
+    public ResponseEntity<AttainmentService.AttainmentResult> getPoAttainment(
+        Authentication authentication,
+        @PathVariable String courseCode, @PathVariable String programme,
+        @PathVariable String academicYear, @PathVariable String department
+    ) {
+        return ResponseEntity.ok(
+            attainmentService.getPoAttainment(authentication.getName(), courseCode, programme, academicYear, department)
+        );
+    }
 }

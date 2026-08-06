@@ -3,15 +3,19 @@ package org.example.copo.service;
 import lombok.RequiredArgsConstructor;
 import org.example.copo.entity.Assessment;
 import org.example.copo.entity.AssessmentQuestion;
+import org.example.copo.entity.AssessmentQuestionPO;
 import org.example.copo.entity.CO;
 import org.example.copo.entity.CourseAssessmentSection;
 import org.example.copo.entity.Enrollment;
+import org.example.copo.entity.PO;
 import org.example.copo.entity.StudentAssessmentMarks;
+import org.example.copo.repository.AssessmentQuestionPORepository;
 import org.example.copo.repository.AssessmentQuestionRepository;
 import org.example.copo.repository.AssessmentRepository;
 import org.example.copo.repository.CORepository;
 import org.example.copo.repository.CourseAssessmentSectionRepository;
 import org.example.copo.repository.EnrollmentRepository;
+import org.example.copo.repository.PORepository;
 import org.example.copo.repository.StudentAssessmentMarksRepository;
 import org.springframework.stereotype.Service;
 
@@ -21,6 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * CO/PO attainment - the core of the whole system. Ported directly from the desktop
@@ -37,9 +42,11 @@ public class AttainmentService {
     private final CourseAssessmentSectionRepository sectionRepository;
     private final AssessmentRepository assessmentRepository;
     private final AssessmentQuestionRepository questionRepository;
+    private final AssessmentQuestionPORepository questionPoRepository;
     private final StudentAssessmentMarksRepository marksRepository;
     private final EnrollmentRepository enrollmentRepository;
     private final CORepository coRepository;
+    private final PORepository poRepository;
     private final CourseAssignmentThresholdService thresholdService;
     private final AssignmentAuthorizationService authorizationService;
 
@@ -152,6 +159,145 @@ public class AttainmentService {
         List<OutcomeAttainmentRow> rows = coTotal.keySet().stream()
             .sorted(Comparator.comparingInt(AttainmentService::extractNumber))
             .map(co -> new OutcomeAttainmentRow(co, attainedCounts.getOrDefault(co, 0) * 100.0 / studentIds.size()))
+            .toList();
+
+        return new AttainmentResult(rows, List.of());
+    }
+
+    public AttainmentResult getPoAttainment(
+        String facultyEmail, String courseCode, String programme, String academicYear, String department
+    ) {
+        authorizationService.requireAssignedToCourse(facultyEmail, courseCode, programme, academicYear);
+
+        List<CourseAssessmentSection> sections =
+            sectionRepository.findByCourseCodeAndProgrammeOrderBySectionOrderAsc(courseCode, programme);
+        if (sections.isEmpty()) {
+            return blocked("No assessment sections configured for this course.");
+        }
+
+        Map<Integer, String> poNumberById = new HashMap<>();
+        for (PO po : poRepository.findAll()) {
+            poNumberById.put(po.getId(), po.getPoNumber());
+        }
+
+        List<String> issues = new ArrayList<>();
+        List<AssessmentQuestion> allQuestions = new ArrayList<>();
+        Map<Integer, List<Integer>> poIdsByQuestion = new HashMap<>();
+
+        for (CourseAssessmentSection section : sections) {
+            Optional<Assessment> assessment = assessmentRepository.findBySectionIdAndAcademicYear(section.getId(), academicYear);
+            List<AssessmentQuestion> sectionQuestions = assessment
+                .map(a -> questionRepository.findByAssessmentId(a.getId()))
+                .orElse(List.of());
+
+            if (sectionQuestions.isEmpty()) {
+                issues.add("Section \"" + section.getDisplayName() + "\" has no questions defined for " + academicYear + ".");
+                continue;
+            }
+
+            List<Integer> qIds = sectionQuestions.stream().map(AssessmentQuestion::getId).toList();
+            Map<Integer, List<Integer>> sectionPoMap = questionPoRepository.findByQuestionIdIn(qIds).stream()
+                .collect(Collectors.groupingBy(
+                    AssessmentQuestionPO::getQuestionId,
+                    Collectors.mapping(AssessmentQuestionPO::getPoId, Collectors.toList())
+                ));
+
+            boolean hasPoMapped = sectionQuestions.stream()
+                .anyMatch(q -> !sectionPoMap.getOrDefault(q.getId(), List.of()).isEmpty());
+            if (!hasPoMapped) {
+                issues.add("Section \"" + section.getDisplayName() + "\" has questions but none mapped to a PO.");
+                continue;
+            }
+
+            allQuestions.addAll(sectionQuestions);
+            poIdsByQuestion.putAll(sectionPoMap);
+        }
+
+        if (!issues.isEmpty()) {
+            return new AttainmentResult(List.of(), issues);
+        }
+
+        // A question can map to more than one PO - its marks count toward every PO
+        // it's mapped to, both in the denominator and in a student's obtained total.
+        Map<String, Double> poTotal = new HashMap<>();
+        Map<Integer, List<String>> questionIdToPos = new HashMap<>();
+        for (AssessmentQuestion q : allQuestions) {
+            List<Integer> poIds = poIdsByQuestion.getOrDefault(q.getId(), List.of());
+            if (poIds.isEmpty()) continue;
+
+            List<String> poNumbers = new ArrayList<>();
+            for (Integer poId : poIds) {
+                String poNumber = poNumberById.get(poId);
+                if (poNumber == null) continue;
+                poTotal.merge(poNumber, q.getMarks(), Double::sum);
+                poNumbers.add(poNumber);
+            }
+            if (!poNumbers.isEmpty()) questionIdToPos.put(q.getId(), poNumbers);
+        }
+
+        if (poTotal.isEmpty()) {
+            return blocked("Questions exist but none have PO mappings.");
+        }
+
+        List<Enrollment> enrollments = enrollmentRepository.findByCourseIdAndProgrammeAndAcademicYear(courseCode, programme, academicYear);
+        List<String> studentIds = enrollments.stream().map(Enrollment::getStudentId).distinct().toList();
+        if (studentIds.isEmpty()) {
+            return blocked("No students enrolled for this course in " + academicYear + ".");
+        }
+
+        List<Integer> questionIds = new ArrayList<>(questionIdToPos.keySet());
+        Map<String, Double> obtainedByKey = new HashMap<>();
+        for (StudentAssessmentMarks mark : marksRepository.findByQuestionIdIn(questionIds)) {
+            obtainedByKey.put(mark.getStudentId() + "::" + mark.getQuestionId(), mark.getMarksObtained());
+        }
+
+        // totalRequired/graded are counted once per (student, question) - matching
+        // POReportDialogController exactly - not once per (student, question, PO). A
+        // question mapped to 3 POs is still one mark cell to grade, not three.
+        int totalRequired = studentIds.size() * questionIdToPos.size();
+        int graded = 0;
+        Map<String, Map<String, Double>> studentPoObtained = new HashMap<>();
+        for (String studentId : studentIds) {
+            Map<String, Double> perPo = new HashMap<>();
+            studentPoObtained.put(studentId, perPo);
+            for (Map.Entry<Integer, List<String>> entry : questionIdToPos.entrySet()) {
+                Double obtained = obtainedByKey.get(studentId + "::" + entry.getKey());
+                if (obtained != null) {
+                    graded++;
+                    for (String po : entry.getValue()) {
+                        perPo.merge(po, obtained, Double::sum);
+                    }
+                }
+            }
+        }
+
+        if (graded == 0) {
+            return blocked("No marks have been entered yet.");
+        }
+        if (graded < totalRequired) {
+            return blocked("Not all required marks are graded yet (" + graded + " of " + totalRequired + ").");
+        }
+
+        double threshold = thresholdService.getThresholds(courseCode, programme, academicYear, department).poIndividual() / 100.0;
+
+        Map<String, Integer> attainedCounts = new HashMap<>();
+        for (String po : poTotal.keySet()) attainedCounts.put(po, 0);
+
+        for (String studentId : studentIds) {
+            Map<String, Double> gotMap = studentPoObtained.get(studentId);
+            for (String po : poTotal.keySet()) {
+                double denom = poTotal.get(po);
+                if (denom <= 0) continue;
+                double got = gotMap.getOrDefault(po, 0.0);
+                if (got / denom >= threshold) {
+                    attainedCounts.merge(po, 1, Integer::sum);
+                }
+            }
+        }
+
+        List<OutcomeAttainmentRow> rows = poTotal.keySet().stream()
+            .sorted(Comparator.comparingInt(AttainmentService::extractNumber))
+            .map(po -> new OutcomeAttainmentRow(po, attainedCounts.getOrDefault(po, 0) * 100.0 / studentIds.size()))
             .toList();
 
         return new AttainmentResult(rows, List.of());
