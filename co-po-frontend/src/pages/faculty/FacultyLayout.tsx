@@ -20,6 +20,8 @@ const getFacultyBreadcrumb = (path: string): string => {
   if (path.startsWith('/faculty/assessments')) return 'Course Questions';
   if (path.startsWith('/faculty/marks')) return 'Student Marks';
   if (path.startsWith('/faculty/thresholds')) return 'Course Thresholds';
+  if (path.startsWith('/faculty/reports/co')) return 'CO Report';
+  if (path.startsWith('/faculty/reports/po')) return 'PO Report';
   if (path.startsWith('/faculty/change-password')) return 'Change Password';
   return 'Home';
 };
@@ -44,8 +46,8 @@ const FacultyLayout = () => {
     {
       title: 'REPORTS',
       items: [
-        { text: '📊  CO Report', path: '/faculty', enabled: false },
-        { text: '📈  PO Report', path: '/faculty', enabled: false },
+        { text: '📊  CO Report', path: '/faculty/reports/co', enabled: true },
+        { text: '📈  PO Report', path: '/faculty/reports/po', enabled: true },
         { text: '📑  Summary Report', path: '/faculty', enabled: false },
         { text: '📄  Course Report', path: '/faculty', enabled: false },
         { text: '📋  Detailed Marks Report', path: '/faculty', enabled: false },

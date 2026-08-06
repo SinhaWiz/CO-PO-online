@@ -111,3 +111,55 @@ export const getMyAssignmentThresholds = (courseCode: string, programme: string,
 export const updateMyAssignmentThresholds = (
   courseCode: string, programme: string, academicYear: string, department: string, data: Thresholds,
 ) => api.put<Thresholds>(facultyAssignmentThresholdsUrl(courseCode, programme, academicYear, department), data);
+
+export interface OutcomeAttainmentRow {
+  code: string;
+  attainedPercent: number;
+}
+
+export interface AttainmentResult {
+  rows: OutcomeAttainmentRow[];
+  issues: string[];
+}
+
+const attainmentUrl = (kind: 'co' | 'po', courseCode: string, programme: string, academicYear: string, department: string) =>
+  `/faculty/attainment/${kind}/${encodeURIComponent(courseCode)}/${encodeURIComponent(programme)}/${encodeURIComponent(academicYear)}/${encodeURIComponent(department)}`;
+
+// issues is non-empty (and rows empty) whenever grading isn't 100% complete or some
+// section is missing CO/PO mapping - the backend refuses to publish a partial number.
+export const getCoAttainment = (courseCode: string, programme: string, academicYear: string, department: string) =>
+  api.get<AttainmentResult>(attainmentUrl('co', courseCode, programme, academicYear, department));
+export const getPoAttainment = (courseCode: string, programme: string, academicYear: string, department: string) =>
+  api.get<AttainmentResult>(attainmentUrl('po', courseCode, programme, academicYear, department));
+
+export interface ReportComment {
+  code: string;
+  comment: string;
+  suggestions: string;
+}
+
+export interface GeneratedReport {
+  pdfFileName: string | null;
+  rows: OutcomeAttainmentRow[];
+  issues: string[];
+}
+
+const outcomeReportUrl = (kind: 'co' | 'po', courseCode: string, programme: string, academicYear: string, department: string) =>
+  `/faculty/reports/${kind}/${encodeURIComponent(courseCode)}/${encodeURIComponent(programme)}/${encodeURIComponent(academicYear)}/${encodeURIComponent(department)}`;
+
+export const generateCoReport = (
+  courseCode: string, programme: string, academicYear: string, department: string, comments: ReportComment[],
+) => api.post<GeneratedReport>(outcomeReportUrl('co', courseCode, programme, academicYear, department), { comments });
+export const generatePoReport = (
+  courseCode: string, programme: string, academicYear: string, department: string, comments: ReportComment[],
+) => api.post<GeneratedReport>(outcomeReportUrl('po', courseCode, programme, academicYear, department), { comments });
+
+// Faculty-scoped mirror of downloadAdminReport (api/reports.ts) - same backend file
+// resolver, reachable with a FACULTY-role JWT instead of an ADMIN one.
+export const downloadFacultyReport = async (type: string, name: string) => {
+  const response = await api.get('/faculty/reports/download', {
+    params: { type, name },
+    responseType: 'blob',
+  });
+  return response.data;
+};
