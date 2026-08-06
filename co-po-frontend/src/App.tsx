@@ -7,6 +7,7 @@ import AdminLayout from './pages/admin/AdminLayout';
 import ManageFaculties from './pages/admin/ManageFaculties';
 import ManageStudents from './pages/admin/ManageStudents';
 import ManageCourses from './pages/admin/ManageCourses';
+import ManageOutcomes from './pages/admin/ManageOutcomes';
 import ManageEnrollments from './pages/admin/ManageEnrollments';
 import ManageCourseAssignments from './pages/admin/ManageCourseAssignments';
 import ManageCulminationCourses from './pages/admin/ManageCulminationCourses';
@@ -45,6 +46,7 @@ function App() {
           <Route path="faculties" element={<ManageFaculties />} />
           <Route path="students" element={<ManageStudents />} />
           <Route path="courses" element={<ManageCourses />} />
+          <Route path="outcomes" element={<ManageOutcomes />} />
           <Route path="enrollments" element={<ManageEnrollments />} />
           <Route path="course-assignments" element={<ManageCourseAssignments />} />
           <Route path="culmination-courses" element={<ManageCulminationCourses />} />

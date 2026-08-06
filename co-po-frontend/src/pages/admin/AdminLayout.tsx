@@ -22,6 +22,7 @@ const getAdminBreadcrumb = (path: string): string => {
   if (path.startsWith('/admin/courses')) return 'Manage Courses';
   if (path.startsWith('/admin/enrollments')) return 'Manage Enrollments';
   if (path.startsWith('/admin/course-assignments')) return 'Course Assignments';
+  if (path.startsWith('/admin/outcomes')) return 'Manage Outcomes';
   if (path.startsWith('/admin/culmination-courses')) return 'Culmination Courses';
   if (path.startsWith('/admin/thresholds')) return 'Manage Thresholds';
   if (path.startsWith('/admin/graduating-students')) return 'Graduating Students';
@@ -51,6 +52,7 @@ const AdminLayout = () => {
     {
       title: 'CONFIGURATION',
       items: [
+        { text: '🎯  Manage Outcomes (CO/PO)', path: '/admin/outcomes', enabled: true },
         { text: '🎯  Culmination Courses', path: '/admin/culmination-courses', enabled: true },
         { text: '⚙️  Manage Thresholds', path: '/admin/thresholds', enabled: true },
         { text: '🎓  Graduating Students', path: '/admin/graduating-students', enabled: true },

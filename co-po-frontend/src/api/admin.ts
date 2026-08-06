@@ -26,6 +26,16 @@ export interface Course {
   department: string;
 }
 
+export interface CourseOutcome {
+  id: number;
+  coNumber: string;
+}
+
+export interface ProgramOutcome {
+  id: number;
+  poNumber: string;
+}
+
 export interface Enrollment {
   studentId: string;
   courseId: string;
@@ -110,6 +120,15 @@ export const updateCourse = (courseCode: string, programme: string, data: Course
   api.put<Course>(`/admin/courses/${encodeURIComponent(courseCode)}/${encodeURIComponent(programme)}`, data);
 export const deleteCourse = (courseCode: string, programme: string) =>
   api.delete(`/admin/courses/${encodeURIComponent(courseCode)}/${encodeURIComponent(programme)}`);
+
+// CO/PO master data API
+export const getCOs = () => api.get<CourseOutcome[]>('/admin/outcomes/co');
+export const createCO = (coNumber: string) => api.post<CourseOutcome>('/admin/outcomes/co', { coNumber });
+export const deleteCO = (id: number) => api.delete(`/admin/outcomes/co/${id}`);
+
+export const getPOs = () => api.get<ProgramOutcome[]>('/admin/outcomes/po');
+export const createPO = (poNumber: string) => api.post<ProgramOutcome>('/admin/outcomes/po', { poNumber });
+export const deletePO = (id: number) => api.delete(`/admin/outcomes/po/${id}`);
 
 // Enrollments API
 export const getEnrollments = () => api.get<Enrollment[]>('/admin/enrollments');
