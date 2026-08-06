@@ -3,6 +3,7 @@ package org.example.copo.service;
 import lombok.RequiredArgsConstructor;
 import org.example.copo.entity.Admin;
 import org.example.copo.repository.AdminRepository;
+import org.example.copo.security.PasswordMatcher;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -23,6 +24,7 @@ public class AdminAccountService {
 
     private final AdminRepository adminRepository;
     private final PasswordEncoder passwordEncoder;
+    private final PasswordMatcher passwordMatcher;
     private final JdbcTemplate jdbcTemplate;
 
     public record AdminProfileDto(
@@ -75,7 +77,7 @@ public class AdminAccountService {
         }
 
         Admin currentAdmin = getAdminByEmailOrThrow(currentAdminEmail);
-        if (!matchesPassword(currentPassword, currentAdmin.getPassword())) {
+        if (!passwordMatcher.matches(currentPassword, currentAdmin.getPassword())) {
             throw badRequest("Current password is incorrect!");
         }
 
@@ -210,7 +212,7 @@ public class AdminAccountService {
         }
 
         Admin currentAdmin = getAdminByEmailOrThrow(currentAdminEmail);
-        if (!matchesPassword(enteredPassword, currentAdmin.getPassword())) {
+        if (!passwordMatcher.matches(enteredPassword, currentAdmin.getPassword())) {
             throw badRequest("Incorrect password. Operation cancelled.");
         }
     }
@@ -225,18 +227,6 @@ public class AdminAccountService {
     private Admin getAdminByEmailOrThrow(String email) {
         return adminRepository.findByEmail(email)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Admin session not found."));
-    }
-
-    private boolean matchesPassword(String rawPassword, String storedPassword) {
-        if (storedPassword == null) {
-            return false;
-        }
-
-        if (storedPassword.startsWith("$2a$") || storedPassword.startsWith("$2b$") || storedPassword.startsWith("$2y$")) {
-            return passwordEncoder.matches(rawPassword, storedPassword);
-        }
-
-        return rawPassword.equals(storedPassword);
     }
 
     private void ensureAdminColumns() {

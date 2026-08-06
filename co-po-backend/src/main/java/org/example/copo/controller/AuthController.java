@@ -7,9 +7,9 @@ import org.example.copo.entity.Faculty;
 import org.example.copo.repository.AdminRepository;
 import org.example.copo.repository.FacultyRepository;
 import org.example.copo.security.JwtTokenProvider;
+import org.example.copo.security.PasswordMatcher;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
@@ -24,7 +24,7 @@ public class AuthController {
 
     private final AdminRepository adminRepository;
     private final FacultyRepository facultyRepository;
-    private final PasswordEncoder passwordEncoder;
+    private final PasswordMatcher passwordMatcher;
     private final JwtTokenProvider jwtTokenProvider;
 
     @PostMapping("/login")
@@ -37,7 +37,7 @@ public class AuthController {
             Optional<Admin> adminOpt = adminRepository.findByEmail(email);
             if (adminOpt.isPresent()) {
                 Admin admin = adminOpt.get();
-                if (matchesPassword(rawPassword, admin.getPassword())) {
+                if (passwordMatcher.matches(rawPassword, admin.getPassword())) {
                     String token = jwtTokenProvider.generateToken(email, "ROLE_ADMIN", "Admin");
                     return ResponseEntity.ok(new JwtAuthResponse(token, email, "ROLE_ADMIN", "Admin"));
                 }
@@ -46,7 +46,7 @@ public class AuthController {
             Optional<Faculty> facultyOpt = facultyRepository.findByEmail(email);
             if (facultyOpt.isPresent()) {
                 Faculty faculty = facultyOpt.get();
-                if (matchesPassword(rawPassword, faculty.getPassword())) {
+                if (passwordMatcher.matches(rawPassword, faculty.getPassword())) {
                     String token = jwtTokenProvider.generateToken(email, "ROLE_FACULTY", faculty.getFullName());
                     return ResponseEntity.ok(new JwtAuthResponse(token, email, "ROLE_FACULTY", faculty.getFullName()));
                 }
@@ -56,17 +56,5 @@ public class AuthController {
         }
 
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid email or password");
-    }
-
-    private boolean matchesPassword(String rawPassword, String storedPassword) {
-        if (storedPassword == null) {
-            return false;
-        }
-
-        if (storedPassword.startsWith("$2a$") || storedPassword.startsWith("$2b$") || storedPassword.startsWith("$2y$")) {
-            return passwordEncoder.matches(rawPassword, storedPassword);
-        }
-
-        return rawPassword.equals(storedPassword);
     }
 }

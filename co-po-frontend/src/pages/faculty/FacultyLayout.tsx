@@ -19,6 +19,7 @@ const getFacultyBreadcrumb = (path: string): string => {
   if (path === '/faculty' || path === '/faculty/dashboard') return 'Home';
   if (path.startsWith('/faculty/assessments')) return 'Course Questions';
   if (path.startsWith('/faculty/marks')) return 'Student Marks';
+  if (path.startsWith('/faculty/change-password')) return 'Change Password';
   return 'Home';
 };
 
@@ -54,6 +55,12 @@ const FacultyLayout = () => {
       items: [
         { text: '📤  Export Marks', path: '/faculty', enabled: false },
         { text: '📥  Import Marks', path: '/faculty', enabled: false },
+      ],
+    },
+    {
+      title: 'ACCOUNT',
+      items: [
+        { text: '🔒  Change Password', path: '/faculty/change-password', enabled: true },
       ],
     },
   ];

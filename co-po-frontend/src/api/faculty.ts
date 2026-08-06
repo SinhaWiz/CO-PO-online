@@ -33,5 +33,13 @@ export const getMarks = (questionId: number) =>
   api.get<StudentAssessmentMarks[]>(`/faculty/assessments/marks/question/${questionId}`);
 
 // Save/Update Student Mark
-export const saveMarks = (data: StudentAssessmentMarks) => 
+export const saveMarks = (data: StudentAssessmentMarks) =>
   api.post<StudentAssessmentMarks>('/faculty/assessments/marks', data);
+
+// Change own password
+export const changeFacultyPassword = (currentPassword: string, newPassword: string, confirmPassword: string) =>
+  api.post<{ message: string }>('/faculty/account/change-password', {
+    currentPassword,
+    newPassword,
+    confirmPassword,
+  });
