@@ -2,7 +2,6 @@ package org.example.copo.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.example.copo.entity.AssessmentQuestion;
 import org.example.copo.entity.StudentAssessmentMarks;
 import org.example.copo.service.FacultyAssessmentService;
 import org.springframework.http.ResponseEntity;
@@ -20,14 +19,16 @@ public class FacultyAssessmentController {
 
     @PreAuthorize("hasRole('FACULTY')")
     @GetMapping("/questions/{assessmentId}")
-    public ResponseEntity<List<AssessmentQuestion>> getQuestionsForAssessment(@PathVariable Integer assessmentId) {
+    public ResponseEntity<List<FacultyAssessmentService.QuestionDto>> getQuestionsForAssessment(@PathVariable Integer assessmentId) {
         return ResponseEntity.ok(assessmentService.getQuestionsForAssessment(assessmentId));
     }
 
     @PreAuthorize("hasRole('FACULTY')")
     @PostMapping("/questions")
-    public ResponseEntity<AssessmentQuestion> createQuestion(@Valid @RequestBody AssessmentQuestion question) {
-        return ResponseEntity.ok(assessmentService.createQuestion(question));
+    public ResponseEntity<FacultyAssessmentService.QuestionDto> createQuestion(
+        @Valid @RequestBody FacultyAssessmentService.CreateQuestionRequest request
+    ) {
+        return ResponseEntity.ok(assessmentService.createQuestion(request));
     }
 
     @PreAuthorize("hasRole('FACULTY')")

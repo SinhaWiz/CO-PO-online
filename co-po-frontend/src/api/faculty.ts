@@ -6,7 +6,7 @@ export interface AssessmentQuestion {
   title: string;
   marks: number;
   coId?: number;
-  poId?: number;
+  poIds?: number[];
 }
 
 export interface StudentAssessmentMarks {

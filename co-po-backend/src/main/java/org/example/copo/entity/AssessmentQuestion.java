@@ -34,6 +34,9 @@ public class AssessmentQuestion {
     @Column(name = "co_id")
     private Integer coId;
 
-    @Column(name = "po_id")
-    private Integer poId;
+    // PO mapping lives in AssessmentQuestion_PO now (a question can map to several POs,
+    // not just one) - see AssessmentQuestionPO. The AssessmentQuestion table still has
+    // an unused po_id column underneath this entity; left in place rather than dropped
+    // sight-unseen by a migration, since it was never mapped here to begin with once
+    // this change lands.
 }

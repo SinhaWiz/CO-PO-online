@@ -154,14 +154,18 @@ public class AdminReportService {
                         Integer qid = asInt(row.get("question_id"));
                         if (qid == null) continue;
 
-                        String po = bundle.idToPO.get(qid);
-                        if (po == null || po.isBlank()) continue;
+                        // A question can map to more than one PO - its mark contributes
+                        // to every PO it's mapped to, not just one.
+                        List<String> pos = bundle.idToPO.getOrDefault(qid, List.of());
+                        if (pos.isEmpty()) continue;
 
-                        required++;
                         Double got = asDouble(row.get("marks_obtained"));
-                        if (got != null) {
-                            graded++;
-                            studentCoursePoObtained.merge(po, got, Double::sum);
+                        for (String po : pos) {
+                            required++;
+                            if (got != null) {
+                                graded++;
+                                studentCoursePoObtained.merge(po, got, Double::sum);
+                            }
                         }
                     }
                 }
@@ -267,7 +271,7 @@ public class AdminReportService {
         List<String> noPOSections = new ArrayList<>();
 
         Map<String, Double> poTotals = new HashMap<>();
-        Map<Integer, String> idToPO = new HashMap<>();
+        Map<Integer, List<String>> idToPO = new HashMap<>();
 
         for (Map<String, Object> section : sectionRows) {
             Integer sectionId = asInt(section.get("id"));
@@ -276,12 +280,15 @@ public class AdminReportService {
 
             sectionIds.add(sectionId);
 
+            // Two separate queries (questions, then their PO mappings) rather than one
+            // join, so a section that has questions but none PO-mapped can still be told
+            // apart from a section with no questions at all - a plain join through
+            // AssessmentQuestion_PO would simply drop unmapped questions from the result.
             List<Map<String, Object>> qRows = jdbcTemplate.queryForList(
                 """
-                SELECT aq.id AS question_id, aq.marks AS marks, po.po_number AS po_number
+                SELECT aq.id AS question_id, aq.marks AS marks
                 FROM Assessment a
                 JOIN AssessmentQuestion aq ON aq.assessment_id = a.id
-                LEFT JOIN PO po ON aq.po_id = po.id
                 WHERE a.section_id = ? AND a.academic_year = ?
                 """,
                 sectionId,
@@ -293,17 +300,33 @@ public class AdminReportService {
                 continue;
             }
 
-            boolean hasPo = false;
+            Map<Integer, Double> questionMarks = new HashMap<>();
+            List<Integer> questionIds = new ArrayList<>();
             for (Map<String, Object> q : qRows) {
-                String po = Objects.toString(q.get("po_number"), "").trim().toUpperCase(Locale.ROOT);
                 Integer qid = asInt(q.get("question_id"));
-                Double marks = asDouble(q.get("marks"));
+                if (qid == null) continue;
+                questionIds.add(qid);
+                questionMarks.put(qid, asDouble(q.get("marks")));
+            }
 
-                if (!po.isBlank() && qid != null) {
-                    hasPo = true;
-                    poTotals.merge(po, marks == null ? 0.0 : marks, Double::sum);
-                    idToPO.put(qid, po);
-                }
+            String placeholders = String.join(",", java.util.Collections.nCopies(questionIds.size(), "?"));
+            List<Map<String, Object>> poRows = questionIds.isEmpty() ? List.of() : jdbcTemplate.queryForList(
+                "SELECT aqp.question_id AS question_id, po.po_number AS po_number " +
+                    "FROM AssessmentQuestion_PO aqp JOIN PO po ON aqp.po_id = po.id " +
+                    "WHERE aqp.question_id IN (" + placeholders + ")",
+                questionIds.toArray()
+            );
+
+            boolean hasPo = false;
+            for (Map<String, Object> row : poRows) {
+                Integer qid = asInt(row.get("question_id"));
+                String po = Objects.toString(row.get("po_number"), "").trim().toUpperCase(Locale.ROOT);
+                if (qid == null || po.isBlank()) continue;
+
+                hasPo = true;
+                Double marks = questionMarks.get(qid);
+                poTotals.merge(po, marks == null ? 0.0 : marks, Double::sum);
+                idToPO.computeIfAbsent(qid, k -> new ArrayList<>()).add(po);
             }
 
             if (!hasPo) {
@@ -438,6 +461,6 @@ public class AdminReportService {
         }
     }
 
-    private record CourseAssessmentBundle(List<Integer> sectionIds, Map<String, Double> poTotals, Map<Integer, String> idToPO) {
+    private record CourseAssessmentBundle(List<Integer> sectionIds, Map<String, Double> poTotals, Map<Integer, List<String>> idToPO) {
     }
 }
