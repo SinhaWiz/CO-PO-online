@@ -23,6 +23,11 @@ import { getMyAssignments, getSectionsForCourse, resolveAssessmentInstance } fro
 import type { CourseSection, MyAssignment } from '../../api/faculty';
 import { getRoster, saveMarksBatch } from '../../api/gradebook';
 import type { MarkEntry, Roster } from '../../api/gradebook';
+import { getAttendanceStatus, saveAttendanceBatch } from '../../api/attendance';
+import type { AttendanceEntry, AttendanceStatus } from '../../api/attendance';
+
+const ATTENDANCE_TAB = 'attendance' as const;
+type ActiveTab = number | '' | typeof ATTENDANCE_TAB;
 
 const assignmentKey = (a: MyAssignment) => `${a.courseCode}||${a.programme}||${a.academicYear}||${a.department}`;
 const cellKey = (studentId: string, questionId: number) => `${studentId}::${questionId}`;
@@ -32,11 +37,15 @@ const EnterMarks = () => {
   const [selectedKey, setSelectedKey] = useState('');
 
   const [sections, setSections] = useState<CourseSection[]>([]);
-  const [activeSectionId, setActiveSectionId] = useState<number | ''>('');
+  const [activeTab, setActiveTab] = useState<ActiveTab>('');
   const [assessmentId, setAssessmentId] = useState<number | null>(null);
 
   const [roster, setRoster] = useState<Roster | null>(null);
   const [edits, setEdits] = useState<Record<string, string>>({});
+
+  const [attendanceStatus, setAttendanceStatus] = useState<AttendanceStatus | null>(null);
+  const [attendanceEdits, setAttendanceEdits] = useState<Record<string, string>>({});
+
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
@@ -45,7 +54,8 @@ const EnterMarks = () => {
     [assignments, selectedKey],
   );
 
-  const dirtyCount = Object.keys(edits).length;
+  const isAttendanceTab = activeTab === ATTENDANCE_TAB;
+  const dirtyCount = Object.keys(isAttendanceTab ? attendanceEdits : edits).length;
 
   useEffect(() => {
     getMyAssignments().then((res) => setAssignments(res.data)).catch((error) => {
@@ -57,28 +67,31 @@ const EnterMarks = () => {
   useEffect(() => {
     if (!selectedAssignment) {
       setSections([]);
-      setActiveSectionId('');
+      setActiveTab('');
+      setAttendanceStatus(null);
       return;
     }
-    getSectionsForCourse(selectedAssignment.courseCode, selectedAssignment.programme)
-      .then((res) => {
-        setSections(res.data);
-        setActiveSectionId(res.data.length > 0 ? res.data[0].id : '');
+    const { courseCode, programme, academicYear } = selectedAssignment;
+    Promise.all([getSectionsForCourse(courseCode, programme), getAttendanceStatus(courseCode, programme, academicYear)])
+      .then(([sectionsRes, attendanceRes]) => {
+        setSections(sectionsRes.data);
+        setAttendanceStatus(attendanceRes.data);
+        setActiveTab(sectionsRes.data.length > 0 ? sectionsRes.data[0].id : '');
       })
       .catch((error) => {
-        console.error('Failed to load sections', error);
-        setMessage({ type: 'error', text: 'Failed to load sections for this course.' });
+        console.error('Failed to load course setup', error);
+        setMessage({ type: 'error', text: 'Failed to load sections/attendance for this course.' });
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedKey]);
 
   useEffect(() => {
-    if (!selectedAssignment || activeSectionId === '') {
+    if (!selectedAssignment || activeTab === '' || activeTab === ATTENDANCE_TAB) {
       setAssessmentId(null);
       setRoster(null);
       return;
     }
-    resolveAssessmentInstance(activeSectionId, selectedAssignment.academicYear)
+    resolveAssessmentInstance(activeTab, selectedAssignment.academicYear)
       .then((res) => {
         setAssessmentId(res.data.id);
         return getRoster(res.data.id);
@@ -92,7 +105,7 @@ const EnterMarks = () => {
         setMessage({ type: 'error', text: 'Failed to load this section.' });
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeSectionId, selectedKey]);
+  }, [activeTab, selectedKey]);
 
   // Warn on tab close/refresh with unsaved edits - mirrors the desktop app's
   // unsaved-changes guard on the marks entry screen.
@@ -118,19 +131,32 @@ const EnterMarks = () => {
     return saved === null ? '' : String(saved);
   };
 
+  const savedAttendance = (studentId: string): number | null =>
+    attendanceStatus?.rows.find((r) => r.studentId === studentId)?.attendancePercentage ?? null;
+
+  const displayAttendance = (studentId: string): string => {
+    if (studentId in attendanceEdits) return attendanceEdits[studentId];
+    const saved = savedAttendance(studentId);
+    return saved === null ? '' : String(saved);
+  };
+
   const handleCellChange = (studentId: string, questionId: number, value: string) => {
     setEdits((prev) => ({ ...prev, [cellKey(studentId, questionId)]: value }));
   };
 
-  const switchSection = (sectionId: number) => {
-    if (dirtyCount > 0) {
-      const proceed = window.confirm(`You have ${dirtyCount} unsaved cell(s). Switch sections and discard them?`);
-      if (!proceed) return;
-    }
-    setActiveSectionId(sectionId);
+  const handleAttendanceChange = (studentId: string, value: string) => {
+    setAttendanceEdits((prev) => ({ ...prev, [studentId]: value }));
   };
 
-  const handleSaveAll = async () => {
+  const confirmDiscard = (label: string) =>
+    dirtyCount === 0 || window.confirm(`You have ${dirtyCount} unsaved cell(s). ${label} and discard them?`);
+
+  const switchTab = (value: ActiveTab) => {
+    if (!confirmDiscard('Switch tabs')) return;
+    setActiveTab(value);
+  };
+
+  const handleSaveMarks = async () => {
     if (!assessmentId || dirtyCount === 0) return;
 
     const entries: MarkEntry[] = [];
@@ -170,6 +196,41 @@ const EnterMarks = () => {
     }
   };
 
+  const handleSaveAttendance = async () => {
+    if (!selectedAssignment || dirtyCount === 0) return;
+
+    const entries: AttendanceEntry[] = [];
+    const badEntries: string[] = [];
+    for (const [studentId, raw] of Object.entries(attendanceEdits)) {
+      const value = raw.trim() === '' ? null : Number(raw);
+      if (value === null || Number.isNaN(value)) {
+        badEntries.push(studentId);
+        continue;
+      }
+      entries.push({ studentId, attendancePercentage: value });
+    }
+
+    if (badEntries.length > 0) {
+      setMessage({ type: 'error', text: `Invalid (non-numeric) attendance for: ${badEntries.join(', ')}` });
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const { courseCode, programme, academicYear } = selectedAssignment;
+      const res = await saveAttendanceBatch(courseCode, programme, academicYear, entries);
+      const refreshed = await getAttendanceStatus(courseCode, programme, academicYear);
+      setAttendanceStatus(refreshed.data);
+      setAttendanceEdits({});
+      setMessage({ type: 'success', text: `Saved attendance for ${res.data.saved} student(s).` });
+    } catch (error: any) {
+      console.error('Failed to save attendance', error);
+      setMessage({ type: 'error', text: error?.response?.data?.message || 'Failed to save attendance.' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <Box>
       <Typography sx={{ fontSize: 28, fontWeight: 700, color: '#1e293b', mb: 2 }}>Student Marks</Typography>
@@ -187,9 +248,7 @@ const EnterMarks = () => {
             label="Course Assignment"
             value={selectedKey}
             onChange={(e) => {
-              if (dirtyCount > 0 && !window.confirm(`You have ${dirtyCount} unsaved cell(s). Switch assignments and discard them?`)) {
-                return;
-              }
+              if (!confirmDiscard('Switch assignments')) return;
               setSelectedKey(e.target.value);
             }}
           >
@@ -211,26 +270,84 @@ const EnterMarks = () => {
         <>
           <Paper sx={{ mb: 2 }}>
             <Tabs
-              value={activeSectionId}
-              onChange={(_, value) => switchSection(value)}
+              value={activeTab}
+              onChange={(_, value) => switchTab(value)}
               variant="scrollable"
               scrollButtons="auto"
             >
               {sections.map((section) => (
                 <Tab key={section.id} label={section.displayName} value={section.id} />
               ))}
+              {attendanceStatus?.legacyOffering && <Tab label="Attendance" value={ATTENDANCE_TAB} />}
             </Tabs>
-            {sections.length === 0 && (
+            {sections.length === 0 && !attendanceStatus?.legacyOffering && (
               <Typography sx={{ color: '#94a3b8', fontSize: 13, p: 2 }}>
                 This course has no assessment sections defined yet - ask an admin to add some under Manage Courses.
               </Typography>
             )}
           </Paper>
 
-          {roster && (
+          {isAttendanceTab && attendanceStatus && (
+            <>
+              <Alert severity="info" sx={{ mb: 1.5 }}>
+                This offering's majority batch ({attendanceStatus.majorityBatch}) is under 23, so attendance factors
+                into the final weighted result for this course.
+              </Alert>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
+                <Button variant="contained" onClick={handleSaveAttendance} disabled={dirtyCount === 0 || saving}>
+                  {saving ? 'Saving...' : `Save ${dirtyCount > 0 ? `(${dirtyCount} unsaved)` : 'All'}`}
+                </Button>
+                {dirtyCount > 0 && (
+                  <Typography sx={{ color: '#b45309', fontSize: 13 }}>{dirtyCount} cell(s) not yet saved.</Typography>
+                )}
+              </Box>
+              {attendanceStatus.rows.length === 0 ? (
+                <Alert severity="info">No students are enrolled in this course for {selectedAssignment.academicYear} yet.</Alert>
+              ) : (
+                <TableContainer component={Paper}>
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>Student ID</TableCell>
+                        <TableCell>Name</TableCell>
+                        <TableCell align="center">Attendance %</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {attendanceStatus.rows.map((row) => {
+                        const isDirty = row.studentId in attendanceEdits;
+                        return (
+                          <TableRow key={row.studentId} hover>
+                            <TableCell sx={{ whiteSpace: 'nowrap' }}>{row.studentId}</TableCell>
+                            <TableCell>{row.studentName}</TableCell>
+                            <TableCell align="center">
+                              <TextField
+                                type="number"
+                                size="small"
+                                value={displayAttendance(row.studentId)}
+                                onChange={(e) => handleAttendanceChange(row.studentId, e.target.value)}
+                                sx={{
+                                  width: 90,
+                                  '& .MuiInputBase-input': { textAlign: 'center' },
+                                  ...(isDirty && { '& .MuiOutlinedInput-notchedOutline': { borderColor: '#f59e0b', borderWidth: 2 } }),
+                                }}
+                                slotProps={{ htmlInput: { min: 0, max: 100, step: 0.5 } }}
+                              />
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              )}
+            </>
+          )}
+
+          {!isAttendanceTab && roster && (
             <>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
-                <Button variant="contained" onClick={handleSaveAll} disabled={dirtyCount === 0 || saving}>
+                <Button variant="contained" onClick={handleSaveMarks} disabled={dirtyCount === 0 || saving}>
                   {saving ? 'Saving...' : `Save ${dirtyCount > 0 ? `(${dirtyCount} unsaved)` : 'All'}`}
                 </Button>
                 {dirtyCount > 0 && (

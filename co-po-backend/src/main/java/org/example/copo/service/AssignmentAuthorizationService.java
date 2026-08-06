@@ -37,7 +37,7 @@ public class AssignmentAuthorizationService {
     public void requireOwnsSection(String facultyEmail, Integer sectionId, String academicYear) {
         CourseAssessmentSection section = sectionRepository.findById(sectionId)
             .orElseThrow(() -> new ResourceNotFoundException("Assessment section not found: " + sectionId));
-        requireAssignedTo(facultyEmail, section.getCourseCode(), section.getProgramme(), academicYear);
+        requireAssignedToCourse(facultyEmail, section.getCourseCode(), section.getProgramme(), academicYear);
     }
 
     public void requireOwnsAssessment(String facultyEmail, Integer assessmentId) {
@@ -46,7 +46,9 @@ public class AssignmentAuthorizationService {
         requireOwnsSection(facultyEmail, assessment.getSectionId(), assessment.getAcademicYear());
     }
 
-    private void requireAssignedTo(String facultyEmail, String courseCode, String programme, String academicYear) {
+    // Public entry point for things scoped directly to a course offering rather than a
+    // section/assessment - attendance, for one, isn't a question-bearing section at all.
+    public void requireAssignedToCourse(String facultyEmail, String courseCode, String programme, String academicYear) {
         String facultyId = resolveFacultyId(facultyEmail);
         boolean assigned = courseAssignmentRepository.existsByFacultyIdAndCourseCodeAndProgrammeAndAcademicYear(
             facultyId, courseCode, programme, academicYear
