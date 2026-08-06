@@ -154,16 +154,19 @@ public class AdminReportService {
                         Integer qid = asInt(row.get("question_id"));
                         if (qid == null) continue;
 
-                        // A question can map to more than one PO - its mark contributes
-                        // to every PO it's mapped to, not just one.
                         List<String> pos = bundle.idToPO.getOrDefault(qid, List.of());
                         if (pos.isEmpty()) continue;
 
+                        // required/graded are counted once per (student, question) -
+                        // matching GraduatingCohortPOReportController exactly - not once
+                        // per (student, question, PO). A question mapped to 3 POs is
+                        // still one mark cell to grade, not three. The obtained marks
+                        // still contribute to every PO it's mapped to, just below.
+                        required++;
                         Double got = asDouble(row.get("marks_obtained"));
-                        for (String po : pos) {
-                            required++;
-                            if (got != null) {
-                                graded++;
+                        if (got != null) {
+                            graded++;
+                            for (String po : pos) {
                                 studentCoursePoObtained.merge(po, got, Double::sum);
                             }
                         }
