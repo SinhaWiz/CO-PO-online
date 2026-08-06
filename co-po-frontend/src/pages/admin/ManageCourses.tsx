@@ -3,7 +3,13 @@ import {
   Alert,
   Box,
   Button,
+  Chip,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  OutlinedInput,
   Paper,
+  Select,
   Table,
   TableBody,
   TableCell,
@@ -16,9 +22,15 @@ import {
 import {
   createCourse,
   deleteCourse,
+  getCOs,
+  getCourseOutcomes,
   getCourses,
+  getPOs,
   updateCourse,
+  updateCourseOutcomes,
   type Course,
+  type CourseOutcome,
+  type ProgramOutcome,
 } from '../../api/admin';
 import { useConfirmDialog } from '../../components/ConfirmDialog';
 
@@ -36,10 +48,17 @@ const defaultForm: Course = {
 
 const ManageCourses = () => {
   const [courses, setCourses] = useState<Course[]>([]);
+  const [cos, setCos] = useState<CourseOutcome[]>([]);
+  const [pos, setPos] = useState<ProgramOutcome[]>([]);
   const [form, setForm] = useState<Course>(defaultForm);
+  const [selectedCoIds, setSelectedCoIds] = useState<number[]>([]);
+  const [selectedPoIds, setSelectedPoIds] = useState<number[]>([]);
   const [editingKey, setEditingKey] = useState<string | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const { confirm, ConfirmDialog } = useConfirmDialog();
+
+  const coById = useMemo(() => new Map(cos.map((co) => [co.id, co.coNumber])), [cos]);
+  const poById = useMemo(() => new Map(pos.map((po) => [po.id, po.poNumber])), [pos]);
 
   const sortedCourses = useMemo(
     () =>
@@ -61,8 +80,19 @@ const ManageCourses = () => {
     }
   };
 
+  const fetchOutcomeMasterLists = async () => {
+    try {
+      const [coRes, poRes] = await Promise.all([getCOs(), getPOs()]);
+      setCos(coRes.data);
+      setPos(poRes.data);
+    } catch (error) {
+      console.error('Failed to fetch CO/PO master lists', error);
+    }
+  };
+
   useEffect(() => {
     fetchCourses();
+    fetchOutcomeMasterLists();
   }, []);
 
   const validate = (payload: Course) => {
@@ -86,6 +116,8 @@ const ManageCourses = () => {
 
   const clearForm = () => {
     setForm(defaultForm);
+    setSelectedCoIds([]);
+    setSelectedPoIds([]);
     setEditingKey(null);
   };
 
@@ -108,11 +140,12 @@ const ManageCourses = () => {
       if (editingKey) {
         const [courseCode, programme] = editingKey.split('||');
         await updateCourse(courseCode, programme, payload);
-        setMessage({ type: 'success', text: 'Course updated successfully.' });
       } else {
         await createCourse(payload);
-        setMessage({ type: 'success', text: 'Course added successfully.' });
       }
+
+      await updateCourseOutcomes(payload.courseCode, payload.programme, selectedCoIds, selectedPoIds);
+      setMessage({ type: 'success', text: editingKey ? 'Course updated successfully.' : 'Course added successfully.' });
 
       clearForm();
       fetchCourses();
@@ -122,10 +155,20 @@ const ManageCourses = () => {
     }
   };
 
-  const handleEdit = (course: Course) => {
+  const handleEdit = async (course: Course) => {
     setForm(course);
     setEditingKey(`${course.courseCode}||${course.programme}`);
     setMessage(null);
+
+    try {
+      const res = await getCourseOutcomes(course.courseCode, course.programme);
+      setSelectedCoIds(res.data.coIds);
+      setSelectedPoIds(res.data.poIds);
+    } catch (error) {
+      console.error('Failed to load course outcome scoping', error);
+      setSelectedCoIds([]);
+      setSelectedPoIds([]);
+    }
   };
 
   const handleDelete = async (course: Course) => {
@@ -194,6 +237,56 @@ const ManageCourses = () => {
             size="small"
             disabled={Boolean(editingKey)}
           />
+        </Box>
+
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 1.5, mt: 1.5 }}>
+          <FormControl size="small">
+            <InputLabel>Course Outcomes (CO)</InputLabel>
+            <Select
+              multiple
+              label="Course Outcomes (CO)"
+              value={selectedCoIds}
+              onChange={(e) => setSelectedCoIds(e.target.value as number[])}
+              input={<OutlinedInput label="Course Outcomes (CO)" />}
+              renderValue={(selected) => (
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                  {(selected as number[]).map((id) => (
+                    <Chip key={id} label={coById.get(id) ?? id} size="small" />
+                  ))}
+                </Box>
+              )}
+            >
+              {cos.map((co) => (
+                <MenuItem key={co.id} value={co.id}>
+                  {co.coNumber}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          <FormControl size="small">
+            <InputLabel>Program Outcomes (PO)</InputLabel>
+            <Select
+              multiple
+              label="Program Outcomes (PO)"
+              value={selectedPoIds}
+              onChange={(e) => setSelectedPoIds(e.target.value as number[])}
+              input={<OutlinedInput label="Program Outcomes (PO)" />}
+              renderValue={(selected) => (
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                  {(selected as number[]).map((id) => (
+                    <Chip key={id} label={poById.get(id) ?? id} size="small" />
+                  ))}
+                </Box>
+              )}
+            >
+              {pos.map((po) => (
+                <MenuItem key={po.id} value={po.id}>
+                  {po.poNumber}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
         </Box>
 
         <Box sx={{ mt: 2, display: 'flex', gap: 1.25, flexWrap: 'wrap' }}>

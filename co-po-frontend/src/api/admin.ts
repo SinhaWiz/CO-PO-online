@@ -121,6 +121,21 @@ export const updateCourse = (courseCode: string, programme: string, data: Course
 export const deleteCourse = (courseCode: string, programme: string) =>
   api.delete(`/admin/courses/${encodeURIComponent(courseCode)}/${encodeURIComponent(programme)}`);
 
+export interface CourseOutcomes {
+  coIds: number[];
+  poIds: number[];
+}
+
+export const getCourseOutcomes = (courseCode: string, programme: string) =>
+  api.get<CourseOutcomes>(
+    `/admin/courses/${encodeURIComponent(courseCode)}/${encodeURIComponent(programme)}/outcomes`,
+  );
+export const updateCourseOutcomes = (courseCode: string, programme: string, coIds: number[], poIds: number[]) =>
+  api.put<CourseOutcomes>(
+    `/admin/courses/${encodeURIComponent(courseCode)}/${encodeURIComponent(programme)}/outcomes`,
+    { coIds, poIds },
+  );
+
 // CO/PO master data API
 export const getCOs = () => api.get<CourseOutcome[]>('/admin/outcomes/co');
 export const createCO = (coNumber: string) => api.post<CourseOutcome>('/admin/outcomes/co', { coNumber });
