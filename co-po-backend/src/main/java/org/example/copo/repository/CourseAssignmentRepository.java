@@ -7,4 +7,7 @@ import java.util.List;
 
 public interface CourseAssignmentRepository extends JpaRepository<CourseAssignment, CourseAssignment.CourseAssignmentId> {
     List<CourseAssignment> findByFacultyId(String facultyId);
+    boolean existsByFacultyIdAndCourseCodeAndProgrammeAndAcademicYear(
+        String facultyId, String courseCode, String programme, String academicYear
+    );
 }

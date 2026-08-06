@@ -12,6 +12,7 @@ import org.example.copo.service.CourseAssessmentSectionService;
 import org.example.copo.service.FacultyAssessmentService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -29,35 +30,50 @@ public class FacultyAssessmentController {
 
     @PreAuthorize("hasRole('FACULTY')")
     @GetMapping("/questions/{assessmentId}")
-    public ResponseEntity<List<FacultyAssessmentService.QuestionDto>> getQuestionsForAssessment(@PathVariable Integer assessmentId) {
-        return ResponseEntity.ok(assessmentService.getQuestionsForAssessment(assessmentId));
+    public ResponseEntity<List<FacultyAssessmentService.QuestionDto>> getQuestionsForAssessment(
+        Authentication authentication, @PathVariable Integer assessmentId
+    ) {
+        return ResponseEntity.ok(assessmentService.getQuestionsForAssessment(authentication.getName(), assessmentId));
     }
 
     @PreAuthorize("hasRole('FACULTY')")
     @PostMapping("/questions")
     public ResponseEntity<FacultyAssessmentService.QuestionDto> createQuestion(
-        @Valid @RequestBody FacultyAssessmentService.CreateQuestionRequest request
+        Authentication authentication, @Valid @RequestBody FacultyAssessmentService.CreateQuestionRequest request
     ) {
-        return ResponseEntity.ok(assessmentService.createQuestion(request));
+        return ResponseEntity.ok(assessmentService.createQuestion(authentication.getName(), request));
+    }
+
+    @PreAuthorize("hasRole('FACULTY')")
+    @PutMapping("/questions/{questionId}")
+    public ResponseEntity<FacultyAssessmentService.QuestionDto> updateQuestion(
+        Authentication authentication, @PathVariable Integer questionId,
+        @Valid @RequestBody FacultyAssessmentService.UpdateQuestionRequest request
+    ) {
+        return ResponseEntity.ok(assessmentService.updateQuestion(authentication.getName(), questionId, request));
     }
 
     @PreAuthorize("hasRole('FACULTY')")
     @DeleteMapping("/questions/{questionId}")
-    public ResponseEntity<?> deleteQuestion(@PathVariable Integer questionId) {
-        assessmentService.deleteQuestion(questionId);
+    public ResponseEntity<?> deleteQuestion(Authentication authentication, @PathVariable Integer questionId) {
+        assessmentService.deleteQuestion(authentication.getName(), questionId);
         return ResponseEntity.ok().build();
     }
 
     @PreAuthorize("hasRole('FACULTY')")
     @GetMapping("/marks/question/{questionId}")
-    public ResponseEntity<List<StudentAssessmentMarks>> getMarksForQuestion(@PathVariable Integer questionId) {
-        return ResponseEntity.ok(assessmentService.getMarksForQuestion(questionId));
+    public ResponseEntity<List<StudentAssessmentMarks>> getMarksForQuestion(
+        Authentication authentication, @PathVariable Integer questionId
+    ) {
+        return ResponseEntity.ok(assessmentService.getMarksForQuestion(authentication.getName(), questionId));
     }
 
     @PreAuthorize("hasRole('FACULTY')")
     @PostMapping("/marks")
-    public ResponseEntity<StudentAssessmentMarks> saveStudentMarks(@Valid @RequestBody StudentAssessmentMarks marks) {
-        return ResponseEntity.ok(assessmentService.saveStudentMarks(marks));
+    public ResponseEntity<StudentAssessmentMarks> saveStudentMarks(
+        Authentication authentication, @Valid @RequestBody StudentAssessmentMarks marks
+    ) {
+        return ResponseEntity.ok(assessmentService.saveStudentMarks(authentication.getName(), marks));
     }
 
     // Read-only faculty access to a course's admin-defined sections - faculty need to
