@@ -7,6 +7,7 @@ import java.util.Optional;
 
 public interface StudentAssessmentMarksRepository extends JpaRepository<StudentAssessmentMarks, Integer> {
     List<StudentAssessmentMarks> findByQuestionId(Integer questionId);
+    List<StudentAssessmentMarks> findByQuestionIdIn(List<Integer> questionIds);
     List<StudentAssessmentMarks> findByStudentId(String studentId);
     Optional<StudentAssessmentMarks> findByStudentIdAndQuestionId(String studentId, Integer questionId);
 }
