@@ -21,15 +21,20 @@ import {
 } from '@mui/material';
 import {
   createCourse,
+  createCourseSection,
   deleteCourse,
+  deleteCourseSection,
   getCOs,
   getCourseOutcomes,
+  getCourseSections,
   getCourses,
   getPOs,
   updateCourse,
   updateCourseOutcomes,
+  updateCourseSection,
   type Course,
   type CourseOutcome,
+  type CourseSection,
   type ProgramOutcome,
 } from '../../api/admin';
 import { useConfirmDialog } from '../../components/ConfirmDialog';
@@ -53,6 +58,8 @@ const ManageCourses = () => {
   const [form, setForm] = useState<Course>(defaultForm);
   const [selectedCoIds, setSelectedCoIds] = useState<number[]>([]);
   const [selectedPoIds, setSelectedPoIds] = useState<number[]>([]);
+  const [sections, setSections] = useState<CourseSection[]>([]);
+  const [newSectionName, setNewSectionName] = useState('');
   const [editingKey, setEditingKey] = useState<string | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const { confirm, ConfirmDialog } = useConfirmDialog();
@@ -118,6 +125,8 @@ const ManageCourses = () => {
     setForm(defaultForm);
     setSelectedCoIds([]);
     setSelectedPoIds([]);
+    setSections([]);
+    setNewSectionName('');
     setEditingKey(null);
   };
 
@@ -168,6 +177,74 @@ const ManageCourses = () => {
       console.error('Failed to load course outcome scoping', error);
       setSelectedCoIds([]);
       setSelectedPoIds([]);
+    }
+
+    await reloadSections(course.courseCode, course.programme);
+  };
+
+  const reloadSections = async (courseCode: string, programme: string) => {
+    try {
+      const res = await getCourseSections(courseCode, programme);
+      setSections(res.data);
+    } catch (error) {
+      console.error('Failed to load assessment sections', error);
+      setSections([]);
+    }
+  };
+
+  const handleAddSection = async () => {
+    if (!editingKey || !newSectionName.trim()) return;
+    const [courseCode, programme] = editingKey.split('||');
+
+    try {
+      const nextOrder = sections.length === 0 ? 1 : Math.max(...sections.map((s) => s.sectionOrder)) + 1;
+      await createCourseSection(courseCode, programme, newSectionName.trim(), nextOrder);
+      setNewSectionName('');
+      await reloadSections(courseCode, programme);
+    } catch (error: any) {
+      const text = error?.response?.data?.message || 'Failed to add section. Names must be unique within a course.';
+      setMessage({ type: 'error', text });
+    }
+  };
+
+  const handleDeleteSection = async (section: CourseSection) => {
+    if (!editingKey) return;
+    const [courseCode, programme] = editingKey.split('||');
+
+    const ok = await confirm(`Remove section "${section.displayName}"? Any questions/marks under it will be removed too.`, {
+      title: 'Remove Section',
+      confirmLabel: 'Remove',
+      confirmColor: 'error',
+    });
+    if (!ok) return;
+
+    try {
+      await deleteCourseSection(courseCode, programme, section.id);
+      await reloadSections(courseCode, programme);
+    } catch (error) {
+      console.error('Failed to delete section', error);
+      setMessage({ type: 'error', text: 'Failed to delete section.' });
+    }
+  };
+
+  const handleMoveSection = async (index: number, direction: -1 | 1) => {
+    if (!editingKey) return;
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= sections.length) return;
+
+    const [courseCode, programme] = editingKey.split('||');
+    const a = sections[index];
+    const b = sections[targetIndex];
+
+    try {
+      await Promise.all([
+        updateCourseSection(courseCode, programme, a.id, a.displayName, b.sectionOrder),
+        updateCourseSection(courseCode, programme, b.id, b.displayName, a.sectionOrder),
+      ]);
+      await reloadSections(courseCode, programme);
+    } catch (error) {
+      console.error('Failed to reorder sections', error);
+      setMessage({ type: 'error', text: 'Failed to reorder sections.' });
     }
   };
 
@@ -298,6 +375,53 @@ const ManageCourses = () => {
           </Button>
         </Box>
       </Paper>
+
+      {editingKey && (
+        <Paper sx={{ p: 2, mb: 2 }}>
+          <Typography sx={{ fontWeight: 700, mb: 0.5 }}>Assessment Sections</Typography>
+          <Typography sx={{ color: '#64748b', fontSize: 13, mb: 1.5 }}>
+            The ordered list of assessments this course is graded on (e.g. "Quiz 1", "Mid", "Final") - defined
+            per course, not fixed to any set list.
+          </Typography>
+
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mb: 2 }}>
+            {sections.map((section, index) => (
+              <Box
+                key={section.id}
+                sx={{ display: 'flex', alignItems: 'center', gap: 1, p: 1, bgcolor: '#f8fafc', borderRadius: 1 }}
+              >
+                <Typography sx={{ minWidth: 24, color: '#94a3b8', fontSize: 13 }}>{index + 1}.</Typography>
+                <Typography sx={{ flexGrow: 1 }}>{section.displayName}</Typography>
+                <Button size="small" disabled={index === 0} onClick={() => handleMoveSection(index, -1)}>
+                  ↑
+                </Button>
+                <Button size="small" disabled={index === sections.length - 1} onClick={() => handleMoveSection(index, 1)}>
+                  ↓
+                </Button>
+                <Button size="small" color="error" onClick={() => handleDeleteSection(section)}>
+                  Remove
+                </Button>
+              </Box>
+            ))}
+            {sections.length === 0 && <Typography sx={{ color: '#94a3b8' }}>No sections defined yet.</Typography>}
+          </Box>
+
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <TextField
+              label="New Section Name"
+              placeholder="Quiz 1"
+              size="small"
+              value={newSectionName}
+              onChange={(e) => setNewSectionName(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleAddSection()}
+              fullWidth
+            />
+            <Button variant="contained" onClick={handleAddSection}>
+              Add Section
+            </Button>
+          </Box>
+        </Paper>
+      )}
 
       <TableContainer component={Paper}>
         <Table>

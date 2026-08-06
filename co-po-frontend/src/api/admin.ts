@@ -136,6 +136,26 @@ export const updateCourseOutcomes = (courseCode: string, programme: string, coId
     { coIds, poIds },
   );
 
+export interface CourseSection {
+  id: number;
+  courseCode: string;
+  programme: string;
+  displayName: string;
+  sectionOrder: number;
+}
+
+const sectionsUrl = (courseCode: string, programme: string) =>
+  `/admin/courses/${encodeURIComponent(courseCode)}/${encodeURIComponent(programme)}/sections`;
+
+export const getCourseSections = (courseCode: string, programme: string) =>
+  api.get<CourseSection[]>(sectionsUrl(courseCode, programme));
+export const createCourseSection = (courseCode: string, programme: string, displayName: string, sectionOrder: number) =>
+  api.post<CourseSection>(sectionsUrl(courseCode, programme), { displayName, sectionOrder });
+export const updateCourseSection = (courseCode: string, programme: string, id: number, displayName: string, sectionOrder: number) =>
+  api.put<CourseSection>(`${sectionsUrl(courseCode, programme)}/${id}`, { displayName, sectionOrder });
+export const deleteCourseSection = (courseCode: string, programme: string, id: number) =>
+  api.delete(`${sectionsUrl(courseCode, programme)}/${id}`);
+
 // CO/PO master data API
 export const getCOs = () => api.get<CourseOutcome[]>('/admin/outcomes/co');
 export const createCO = (coNumber: string) => api.post<CourseOutcome>('/admin/outcomes/co', { coNumber });

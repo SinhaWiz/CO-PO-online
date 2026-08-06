@@ -1,8 +1,12 @@
 package org.example.copo.controller;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.example.copo.entity.Course;
+import org.example.copo.entity.CourseAssessmentSection;
+import org.example.copo.service.CourseAssessmentSectionService;
 import org.example.copo.service.CourseOutcomeService;
 import org.example.copo.service.CourseService;
 import org.springframework.http.ResponseEntity;
@@ -18,8 +22,10 @@ public class CourseController {
 
     private final CourseService courseService;
     private final CourseOutcomeService courseOutcomeService;
+    private final CourseAssessmentSectionService sectionService;
 
     public record CourseOutcomesRequest(List<Integer> coIds, List<Integer> poIds) {}
+    public record SectionRequest(@NotBlank String displayName, @NotNull Integer sectionOrder) {}
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
@@ -63,5 +69,39 @@ public class CourseController {
         return ResponseEntity.ok(
             courseOutcomeService.updateCourseOutcomes(courseCode, programme, request.coIds(), request.poIds())
         );
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/{courseCode}/{programme}/sections")
+    public ResponseEntity<List<CourseAssessmentSection>> getSections(
+        @PathVariable String courseCode, @PathVariable String programme
+    ) {
+        return ResponseEntity.ok(sectionService.getSections(courseCode, programme));
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/{courseCode}/{programme}/sections")
+    public ResponseEntity<CourseAssessmentSection> createSection(
+        @PathVariable String courseCode, @PathVariable String programme, @Valid @RequestBody SectionRequest request
+    ) {
+        return ResponseEntity.ok(sectionService.createSection(courseCode, programme, request.displayName(), request.sectionOrder()));
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PutMapping("/{courseCode}/{programme}/sections/{id}")
+    public ResponseEntity<CourseAssessmentSection> updateSection(
+        @PathVariable String courseCode, @PathVariable String programme, @PathVariable Integer id,
+        @Valid @RequestBody SectionRequest request
+    ) {
+        return ResponseEntity.ok(sectionService.updateSection(id, request.displayName(), request.sectionOrder()));
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @DeleteMapping("/{courseCode}/{programme}/sections/{id}")
+    public ResponseEntity<?> deleteSection(
+        @PathVariable String courseCode, @PathVariable String programme, @PathVariable Integer id
+    ) {
+        sectionService.deleteSection(id);
+        return ResponseEntity.ok().build();
     }
 }

@@ -43,3 +43,26 @@ export const changeFacultyPassword = (currentPassword: string, newPassword: stri
     newPassword,
     confirmPassword,
   });
+
+export interface CourseSection {
+  id: number;
+  courseCode: string;
+  programme: string;
+  displayName: string;
+  sectionOrder: number;
+}
+
+export interface AssessmentInstance {
+  id: number;
+  sectionId: number;
+  academicYear: string;
+  totalMarks: number;
+}
+
+// Read-only: which sections a course has (admin-defined, faculty can't edit them here)
+export const getSectionsForCourse = (courseCode: string, programme: string) =>
+  api.get<CourseSection[]>(`/faculty/assessments/sections/${encodeURIComponent(courseCode)}/${encodeURIComponent(programme)}`);
+
+// Resolves (section, year) to a real Assessment id, creating it the first time
+export const resolveAssessmentInstance = (sectionId: number, academicYear: string) =>
+  api.post<AssessmentInstance>('/faculty/assessments/instances', { sectionId, academicYear });
