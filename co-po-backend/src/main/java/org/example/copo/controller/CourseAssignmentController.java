@@ -1,5 +1,6 @@
 package org.example.copo.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.copo.entity.CourseAssignment;
 import org.example.copo.service.CourseAssignmentService;
@@ -12,7 +13,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/admin/assignments")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*", maxAge = 3600)
 public class CourseAssignmentController {
 
     private final CourseAssignmentService assignmentService;
@@ -25,7 +25,7 @@ public class CourseAssignmentController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
-    public ResponseEntity<CourseAssignment> createAssignment(@RequestBody CourseAssignment assignment) {
+    public ResponseEntity<CourseAssignment> createAssignment(@Valid @RequestBody CourseAssignment assignment) {
         return ResponseEntity.ok(assignmentService.createAssignment(assignment));
     }
 

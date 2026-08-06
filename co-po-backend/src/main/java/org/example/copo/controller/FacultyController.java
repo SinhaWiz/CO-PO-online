@@ -1,5 +1,6 @@
 package org.example.copo.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.copo.entity.Faculty;
 import org.example.copo.service.FacultyService;
@@ -12,7 +13,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/admin/faculties")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*", maxAge = 3600)
 public class FacultyController {
 
     private final FacultyService facultyService;
@@ -25,13 +25,13 @@ public class FacultyController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
-    public ResponseEntity<Faculty> createFaculty(@RequestBody Faculty faculty) {
+    public ResponseEntity<Faculty> createFaculty(@Valid @RequestBody Faculty faculty) {
         return ResponseEntity.ok(facultyService.createFaculty(faculty));
     }
 
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
-    public ResponseEntity<Faculty> updateFaculty(@PathVariable String id, @RequestBody Faculty faculty) {
+    public ResponseEntity<Faculty> updateFaculty(@PathVariable String id, @Valid @RequestBody Faculty faculty) {
         return ResponseEntity.ok(facultyService.updateFaculty(id, faculty));
     }
 

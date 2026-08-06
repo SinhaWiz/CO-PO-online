@@ -1,5 +1,6 @@
 package org.example.copo.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.copo.entity.AssessmentQuestion;
 import org.example.copo.entity.StudentAssessmentMarks;
@@ -13,7 +14,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/faculty/assessments")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*", maxAge = 3600)
 public class FacultyAssessmentController {
 
     private final FacultyAssessmentService assessmentService;
@@ -26,7 +26,7 @@ public class FacultyAssessmentController {
 
     @PreAuthorize("hasRole('FACULTY')")
     @PostMapping("/questions")
-    public ResponseEntity<AssessmentQuestion> createQuestion(@RequestBody AssessmentQuestion question) {
+    public ResponseEntity<AssessmentQuestion> createQuestion(@Valid @RequestBody AssessmentQuestion question) {
         return ResponseEntity.ok(assessmentService.createQuestion(question));
     }
 
@@ -45,7 +45,7 @@ public class FacultyAssessmentController {
 
     @PreAuthorize("hasRole('FACULTY')")
     @PostMapping("/marks")
-    public ResponseEntity<StudentAssessmentMarks> saveStudentMarks(@RequestBody StudentAssessmentMarks marks) {
+    public ResponseEntity<StudentAssessmentMarks> saveStudentMarks(@Valid @RequestBody StudentAssessmentMarks marks) {
         return ResponseEntity.ok(assessmentService.saveStudentMarks(marks));
     }
 }

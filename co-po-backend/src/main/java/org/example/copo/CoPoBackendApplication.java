@@ -18,13 +18,18 @@ public class CoPoBackendApplication {
     @Bean
     public CommandLineRunner dataInitializer(AdminRepository adminRepository, PasswordEncoder passwordEncoder) {
         return args -> {
-            Admin admin = adminRepository.findByEmail("admin@iut-dhaka.edu").orElse(new Admin());
-            admin.setEmail("admin@iut-dhaka.edu");
-            admin.setPassword(passwordEncoder.encode("password"));
-            admin.setIsSuperAdmin(true);
-            admin.setCreatedBy("system");
-            adminRepository.save(admin);
-            System.out.println("Default admin user created/updated: admin@iut-dhaka.edu / password");
+            // Only seed the default admin the very first time the app runs against an
+            // empty Admin table. Re-seeding on every startup used to blow away any
+            // password change made through the account management screens.
+            if (adminRepository.count() == 0) {
+                Admin admin = new Admin();
+                admin.setEmail("admin@iut-dhaka.edu");
+                admin.setPassword(passwordEncoder.encode("password"));
+                admin.setIsSuperAdmin(true);
+                admin.setCreatedBy("system");
+                adminRepository.save(admin);
+                System.out.println("Default admin user created: admin@iut-dhaka.edu / password");
+            }
         };
     }
 }

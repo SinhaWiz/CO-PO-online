@@ -17,7 +17,7 @@ spring:
         format_sql: true
 
 jwt:
-  secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+  secret: ${JWT_SECRET:1fc051ff98d769ef846ab7905a14740d39dc0d8f8e8aab9f088cd1541c232eee}
   expiration: 86400000 # 1 day in ms
   
 server:

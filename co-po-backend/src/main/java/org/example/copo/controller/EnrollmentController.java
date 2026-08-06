@@ -1,5 +1,6 @@
 package org.example.copo.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.copo.entity.Enrollment;
 import org.example.copo.service.EnrollmentService;
@@ -12,7 +13,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/admin/enrollments")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*", maxAge = 3600)
 public class EnrollmentController {
 
     private final EnrollmentService enrollmentService;
@@ -25,7 +25,7 @@ public class EnrollmentController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
-    public ResponseEntity<Enrollment> createEnrollment(@RequestBody Enrollment enrollment) {
+    public ResponseEntity<Enrollment> createEnrollment(@Valid @RequestBody Enrollment enrollment) {
         return ResponseEntity.ok(enrollmentService.createEnrollment(enrollment));
     }
 

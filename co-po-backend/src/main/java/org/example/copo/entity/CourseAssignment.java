@@ -1,6 +1,7 @@
 package org.example.copo.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
 import java.io.Serializable;
@@ -26,22 +27,27 @@ public class CourseAssignment {
         private String department;
     }
 
+    @NotBlank
     @Column(name = "faculty_id", nullable = false, length = 20)
     private String facultyId;
 
     @Id
+    @NotBlank
     @Column(name = "course_code", length = 20)
     private String courseCode;
 
     @Id
+    @NotBlank
     @Column(length = 11)
     private String programme;
 
     @Id
+    @NotBlank
     @Column(name = "academic_year", length = 9)
     private String academicYear;
 
     @Id
+    @NotBlank
     @Column(length = 3)
     private String department;
 }

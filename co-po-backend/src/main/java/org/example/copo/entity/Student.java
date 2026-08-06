@@ -1,6 +1,9 @@
 package org.example.copo.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 @Entity
@@ -12,15 +15,19 @@ import lombok.*;
 public class Student {
 
     @Id
+    @NotBlank
     @Column(length = 9)
     private String id;
 
+    @NotNull
     @Column(nullable = false)
     private Integer batch;
 
+    @NotBlank
     @Column(nullable = false, length = 100)
     private String name;
 
+    @Email
     @Column(unique = true, length = 100)
     private String email;
 

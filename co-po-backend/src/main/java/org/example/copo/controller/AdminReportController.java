@@ -14,7 +14,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/admin/reports")
-@CrossOrigin(origins = "*", maxAge = 3600)
 public class AdminReportController {
 
     private final AdminReportService adminReportService;

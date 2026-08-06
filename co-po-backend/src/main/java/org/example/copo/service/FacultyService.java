@@ -2,6 +2,7 @@ package org.example.copo.service;
 
 import lombok.RequiredArgsConstructor;
 import org.example.copo.entity.Faculty;
+import org.example.copo.exception.ResourceNotFoundException;
 import org.example.copo.repository.FacultyRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -25,7 +26,8 @@ public class FacultyService {
     }
 
     public Faculty updateFaculty(String id, Faculty facultyDetails) {
-        Faculty faculty = facultyRepository.findById(id).orElseThrow(() -> new RuntimeException("Faculty not found"));
+        Faculty faculty = facultyRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Faculty not found: " + id));
         faculty.setShortname(facultyDetails.getShortname());
         faculty.setFullName(facultyDetails.getFullName());
         faculty.setEmail(facultyDetails.getEmail());
@@ -36,6 +38,9 @@ public class FacultyService {
     }
 
     public void deleteFaculty(String id) {
+        if (!facultyRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Faculty not found: " + id);
+        }
         facultyRepository.deleteById(id);
     }
 }

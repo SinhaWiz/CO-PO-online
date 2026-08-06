@@ -2,6 +2,7 @@ package org.example.copo.service;
 
 import lombok.RequiredArgsConstructor;
 import org.example.copo.entity.Student;
+import org.example.copo.exception.ResourceNotFoundException;
 import org.example.copo.repository.StudentRepository;
 import org.springframework.stereotype.Service;
 
@@ -22,7 +23,8 @@ public class StudentService {
     }
 
     public Student updateStudent(String id, Student studentDetails) {
-        Student student = studentRepository.findById(id).orElseThrow(() -> new RuntimeException("Student not found"));
+        Student student = studentRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Student not found: " + id));
         student.setBatch(studentDetails.getBatch());
         student.setName(studentDetails.getName());
         student.setEmail(studentDetails.getEmail());
@@ -32,6 +34,9 @@ public class StudentService {
     }
 
     public void deleteStudent(String id) {
+        if (!studentRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Student not found: " + id);
+        }
         studentRepository.deleteById(id);
     }
 }

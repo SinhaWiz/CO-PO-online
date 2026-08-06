@@ -2,6 +2,7 @@ package org.example.copo.service;
 
 import lombok.RequiredArgsConstructor;
 import org.example.copo.entity.CourseAssignment;
+import org.example.copo.exception.ResourceNotFoundException;
 import org.example.copo.repository.CourseAssignmentRepository;
 import org.springframework.stereotype.Service;
 
@@ -27,6 +28,9 @@ public class CourseAssignmentService {
 
     public void deleteAssignment(String courseCode, String programme, String academicYear, String department) {
         CourseAssignment.CourseAssignmentId id = new CourseAssignment.CourseAssignmentId(courseCode, programme, academicYear, department);
+        if (!courseAssignmentRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Course assignment not found: " + courseCode + "/" + programme + "/" + academicYear + "/" + department);
+        }
         courseAssignmentRepository.deleteById(id);
     }
 }

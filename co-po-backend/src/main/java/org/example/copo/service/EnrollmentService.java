@@ -2,6 +2,7 @@ package org.example.copo.service;
 
 import lombok.RequiredArgsConstructor;
 import org.example.copo.entity.Enrollment;
+import org.example.copo.exception.ResourceNotFoundException;
 import org.example.copo.repository.EnrollmentRepository;
 import org.springframework.stereotype.Service;
 
@@ -23,6 +24,9 @@ public class EnrollmentService {
 
     public void deleteEnrollment(String studentId, String courseId, String programme, String academicYear) {
         Enrollment.EnrollmentId id = new Enrollment.EnrollmentId(studentId, courseId, programme, academicYear);
+        if (!enrollmentRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Enrollment not found for student " + studentId + " in course " + courseId);
+        }
         enrollmentRepository.deleteById(id);
     }
 }

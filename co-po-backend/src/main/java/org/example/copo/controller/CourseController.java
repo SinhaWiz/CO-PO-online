@@ -1,5 +1,6 @@
 package org.example.copo.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.copo.entity.Course;
 import org.example.copo.service.CourseService;
@@ -12,7 +13,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/admin/courses")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*", maxAge = 3600)
 public class CourseController {
 
     private final CourseService courseService;
@@ -25,13 +25,13 @@ public class CourseController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
-    public ResponseEntity<Course> createCourse(@RequestBody Course course) {
+    public ResponseEntity<Course> createCourse(@Valid @RequestBody Course course) {
         return ResponseEntity.ok(courseService.createCourse(course));
     }
 
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{courseCode}/{programme}")
-    public ResponseEntity<Course> updateCourse(@PathVariable String courseCode, @PathVariable String programme, @RequestBody Course course) {
+    public ResponseEntity<Course> updateCourse(@PathVariable String courseCode, @PathVariable String programme, @Valid @RequestBody Course course) {
         return ResponseEntity.ok(courseService.updateCourse(courseCode, programme, course));
     }
 
