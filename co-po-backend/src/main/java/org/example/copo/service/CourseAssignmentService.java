@@ -5,6 +5,7 @@ import org.example.copo.entity.CourseAssignment;
 import org.example.copo.exception.ResourceNotFoundException;
 import org.example.copo.repository.CourseAssignmentRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -13,6 +14,7 @@ import java.util.List;
 public class CourseAssignmentService {
 
     private final CourseAssignmentRepository courseAssignmentRepository;
+    private final CourseAssignmentThresholdService thresholdService;
 
     public List<CourseAssignment> getAllAssignments() {
         return courseAssignmentRepository.findAll();
@@ -22,8 +24,13 @@ public class CourseAssignmentService {
         return courseAssignmentRepository.findByFacultyId(facultyId);
     }
 
+    @Transactional
     public CourseAssignment createAssignment(CourseAssignment assignment) {
-        return courseAssignmentRepository.save(assignment);
+        CourseAssignment saved = courseAssignmentRepository.save(assignment);
+        thresholdService.seedDefaultIfMissing(
+            saved.getCourseCode(), saved.getProgramme(), saved.getAcademicYear(), saved.getDepartment()
+        );
+        return saved;
     }
 
     public void deleteAssignment(String courseCode, String programme, String academicYear, String department) {
