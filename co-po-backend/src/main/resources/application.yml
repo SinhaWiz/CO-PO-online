@@ -47,7 +47,11 @@ jwt:
   expiration: 86400000 # 1 day in ms
 
 server:
-  port: ${SERVER_PORT:8080}
+  # PORT (not SERVER_PORT) on purpose - that's the variable hosting platforms like
+  # Render set to tell a web service which port it's expected to listen on, and it's
+  # not something you choose yourself. Still defaults to 8080 for local dev, where
+  # nothing sets PORT at all.
+  port: ${PORT:8080}
 
 app:
   report-storage:
@@ -58,3 +62,11 @@ app:
     # deployment. Point this at a real mounted path (e.g. /var/co-po/reports) for
     # anything beyond that.
     base-dir: ${REPORT_STORAGE_DIR:}
+
+  cors:
+    # Comma-separated list of origins the browser is allowed to call this API from.
+    # Defaults to the two localhost variants Vite's dev server runs under - a real
+    # deployment overrides this with its actual frontend URL(s) via
+    # CORS_ALLOWED_ORIGINS, e.g. "https://co-po-frontend.onrender.com". See
+    # docs/render-deployment.md.
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://127.0.0.1:5173}
