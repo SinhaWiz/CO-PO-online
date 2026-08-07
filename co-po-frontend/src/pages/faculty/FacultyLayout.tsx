@@ -27,6 +27,7 @@ const getFacultyBreadcrumb = (path: string): string => {
   if (path.startsWith('/faculty/reports/summary')) return 'Summary Report';
   if (path.startsWith('/faculty/reports/marks')) return 'Marks Reports';
   if (path.startsWith('/faculty/reports/mine')) return 'My Reports';
+  if (path.startsWith('/faculty/marks-excel')) return 'Export / Import Marks';
   if (path.startsWith('/faculty/change-password')) return 'Change Password';
   return 'Home';
 };
@@ -62,8 +63,8 @@ const FacultyLayout = () => {
     {
       title: 'IMPORT/EXPORT',
       items: [
-        { text: '📤  Export Marks', path: '/faculty', enabled: false },
-        { text: '📥  Import Marks', path: '/faculty', enabled: false },
+        { text: '📤  Export Marks', path: '/faculty/marks-excel', enabled: true },
+        { text: '📥  Import Marks', path: '/faculty/marks-excel', enabled: true },
       ],
     },
     {

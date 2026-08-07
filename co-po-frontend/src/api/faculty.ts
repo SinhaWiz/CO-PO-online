@@ -415,3 +415,25 @@ export interface MyReportFile {
 // course assignments, since the shared report folders don't record a per-file owner.
 // See FacultyReportService.listMyReports for the full explanation.
 export const listMyReports = () => api.get<MyReportFile[]>('/faculty/reports/mine');
+
+export interface MarksImportResult {
+  marksSaved: number;
+  attendanceSaved: number;
+  errors: string[];
+}
+
+const marksExcelUrl = (courseCode: string, programme: string, academicYear: string) =>
+  `/faculty/marks-excel/${encodeURIComponent(courseCode)}/${encodeURIComponent(programme)}/${encodeURIComponent(academicYear)}`;
+
+export const exportMarksExcel = async (courseCode: string, programme: string, academicYear: string) => {
+  const response = await api.get(`${marksExcelUrl(courseCode, programme, academicYear)}/export`, {
+    responseType: 'blob',
+  });
+  return response.data as Blob;
+};
+
+export const importMarksExcel = (courseCode: string, programme: string, academicYear: string, file: File) => {
+  const form = new FormData();
+  form.append('file', file);
+  return api.post<MarksImportResult>(`${marksExcelUrl(courseCode, programme, academicYear)}/import`, form);
+};

@@ -30,6 +30,7 @@ import SummaryReport from './pages/faculty/SummaryReport';
 import MarksReports from './pages/faculty/MarksReports';
 import ViewResults from './pages/faculty/ViewResults';
 import MyReports from './pages/faculty/MyReports';
+import ExportImportMarks from './pages/faculty/ExportImportMarks';
 
 // Components
 import AdminDashboardHome from './pages/admin/AdminDashboardHome';
@@ -86,6 +87,7 @@ function App() {
           <Route path="reports/marks" element={<MarksReports />} />
           <Route path="results" element={<ViewResults />} />
           <Route path="reports/mine" element={<MyReports />} />
+          <Route path="marks-excel" element={<ExportImportMarks />} />
           <Route path="change-password" element={<FacultyChangePassword />} />
         </Route>
 
