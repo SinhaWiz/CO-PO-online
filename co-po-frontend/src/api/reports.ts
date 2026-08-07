@@ -39,7 +39,7 @@ export interface CohortPoReportResult {
 }
 
 export interface ReportFileItem {
-    type: 'CO' | 'PO' | 'Detailed' | 'Cohort PO' | string;
+    type: 'CO' | 'PO' | 'Course' | 'Summary' | 'Detailed' | 'Consolidated' | 'Cohort PO' | string;
     name: string;
     sizeBytes: number;
     lastModified: string;

@@ -403,3 +403,15 @@ export const getCourseResults = (courseCode: string, programme: string, academic
   api.get<ResultsOutcome>(
     `/faculty/results/${encodeURIComponent(courseCode)}/${encodeURIComponent(programme)}/${encodeURIComponent(academicYear)}/${encodeURIComponent(department)}`,
   );
+
+export interface MyReportFile {
+  type: string;
+  name: string;
+  sizeBytes: number;
+  lastModified: string;
+}
+
+// Best-effort: matches each on-disk report's filename against this faculty's own
+// course assignments, since the shared report folders don't record a per-file owner.
+// See FacultyReportService.listMyReports for the full explanation.
+export const listMyReports = () => api.get<MyReportFile[]>('/faculty/reports/mine');

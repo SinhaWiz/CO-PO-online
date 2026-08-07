@@ -13,6 +13,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.File;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/faculty/reports")
@@ -49,6 +50,12 @@ public class FacultyReportController {
         return ResponseEntity.ok(facultyReportService.generatePoReport(
             authentication.getName(), courseCode, programme, academicYear, department, request
         ));
+    }
+
+    @PreAuthorize("hasRole('FACULTY')")
+    @GetMapping("/mine")
+    public ResponseEntity<List<AdminReportService.ReportFileDto>> listMyReports(Authentication authentication) {
+        return ResponseEntity.ok(facultyReportService.listMyReports(authentication.getName()));
     }
 
     @PreAuthorize("hasRole('FACULTY')")

@@ -9,6 +9,8 @@ import com.itextpdf.layout.element.Table;
 import com.itextpdf.layout.properties.TextAlignment;
 import com.itextpdf.layout.properties.UnitValue;
 import lombok.RequiredArgsConstructor;
+import org.example.copo.entity.CourseAssignment;
+import org.example.copo.repository.CourseAssignmentRepository;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
@@ -39,10 +41,36 @@ public class FacultyReportService {
     private static final int COMMENT_MAX_LENGTH = 80;
 
     private final AttainmentService attainmentService;
+    private final AdminReportService adminReportService;
+    private final CourseAssignmentRepository courseAssignmentRepository;
+    private final AssignmentAuthorizationService authorizationService;
 
     public record ReportCommentInput(String code, String comment, String suggestions) {}
     public record GenerateReportRequest(List<ReportCommentInput> comments) {}
     public record GeneratedReportResult(String pdfFileName, List<AttainmentService.OutcomeAttainmentRow> rows, List<String> issues) {}
+
+    // The on-disk report folders are flat and shared across every faculty member (a
+    // holdover from the desktop app's single-user layout) with no per-file owner
+    // column - so "my reports" is a best-effort filter over AdminReportService's full
+    // listing, matching each file's name against this faculty's own course
+    // assignments, rather than a real ownership lookup. Cohort PO reports are admin-
+    // generated and course-agnostic, not tied to any one faculty assignment, so they're
+    // excluded here entirely. Good enough for now; a real per-file owner is Phase 10.4's
+    // job once file storage gets a proper redesign.
+    public List<AdminReportService.ReportFileDto> listMyReports(String facultyEmail) {
+        String facultyId = authorizationService.resolveFacultyId(facultyEmail);
+        List<CourseAssignment> assignments = courseAssignmentRepository.findByFacultyId(facultyId);
+
+        return adminReportService.listReportFiles().stream()
+            .filter(file -> !"Cohort PO".equals(file.type()))
+            .filter(file -> assignments.stream().anyMatch(a -> matchesAssignment(file.name(), a)))
+            .toList();
+    }
+
+    private boolean matchesAssignment(String fileName, CourseAssignment assignment) {
+        String safeCourseCode = assignment.getCourseCode().replaceAll("[^A-Za-z0-9_-]", "");
+        return fileName.contains(safeCourseCode) && fileName.contains(assignment.getAcademicYear());
+    }
 
     public GeneratedReportResult generateCoReport(
         String facultyEmail, String courseCode, String programme, String academicYear, String department,

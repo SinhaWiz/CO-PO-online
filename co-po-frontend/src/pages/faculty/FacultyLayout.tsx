@@ -26,6 +26,7 @@ const getFacultyBreadcrumb = (path: string): string => {
   if (path.startsWith('/faculty/reports/course')) return 'Course Report';
   if (path.startsWith('/faculty/reports/summary')) return 'Summary Report';
   if (path.startsWith('/faculty/reports/marks')) return 'Marks Reports';
+  if (path.startsWith('/faculty/reports/mine')) return 'My Reports';
   if (path.startsWith('/faculty/change-password')) return 'Change Password';
   return 'Home';
 };
@@ -55,6 +56,7 @@ const FacultyLayout = () => {
         { text: '📑  Summary Report', path: '/faculty/reports/summary', enabled: true },
         { text: '📄  Course Report', path: '/faculty/reports/course', enabled: true },
         { text: '📋  Marks Reports', path: '/faculty/reports/marks', enabled: true },
+        { text: '🗂️  My Reports', path: '/faculty/reports/mine', enabled: true },
       ],
     },
     {
