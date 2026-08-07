@@ -1,28 +1,21 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Alert,
   Box,
   Button,
   Checkbox,
-  FormControl,
   FormControlLabel,
-  InputLabel,
-  MenuItem,
   Paper,
-  Select,
   Typography,
 } from '@mui/material';
 import {
   downloadFacultyReport,
   generateConsolidatedMarksReport,
   generateDetailedMarksReport,
-  getMyAssignments,
   getSectionsForCourse,
   type CourseSection,
-  type MyAssignment,
 } from '../../api/faculty';
-
-const assignmentKey = (a: MyAssignment) => `${a.courseCode}||${a.programme}||${a.academicYear}||${a.department}`;
+import { AssignmentPickerField, useAssignmentPicker } from '../../components/AssignmentPicker';
 
 type GenState = { generating: boolean; file: string | null; message: { type: 'success' | 'error'; text: string } | null };
 const idleState: GenState = { generating: false, file: null, message: null };
@@ -33,25 +26,13 @@ const idleState: GenState = { generating: false, file: null, message: null };
 // on-screen previews). Bundled into one page since both pull from the exact same
 // assignment + section picker rather than making faculty pick sections twice.
 const MarksReports = () => {
-  const [assignments, setAssignments] = useState<MyAssignment[]>([]);
-  const [selectedKey, setSelectedKey] = useState('');
+  const { assignments, selectedKey, setSelectedKey, selectedAssignment } = useAssignmentPicker();
   const [sections, setSections] = useState<CourseSection[]>([]);
   const [selectedSectionIds, setSelectedSectionIds] = useState<number[]>([]);
   const [includeOverall, setIncludeOverall] = useState(true);
   const [loading, setLoading] = useState(false);
   const [detailed, setDetailed] = useState<GenState>(idleState);
   const [consolidated, setConsolidated] = useState<GenState>(idleState);
-
-  const selectedAssignment = useMemo(
-    () => assignments.find((a) => assignmentKey(a) === selectedKey) ?? null,
-    [assignments, selectedKey],
-  );
-
-  useEffect(() => {
-    getMyAssignments().then((res) => setAssignments(res.data)).catch((error) => {
-      console.error('Failed to load assignments', error);
-    });
-  }, []);
 
   useEffect(() => {
     setDetailed(idleState);
@@ -134,23 +115,7 @@ const MarksReports = () => {
         assessment type).
       </Typography>
 
-      <Paper sx={{ p: 2, mb: 2 }}>
-        <FormControl size="small" fullWidth>
-          <InputLabel>Course Assignment</InputLabel>
-          <Select label="Course Assignment" value={selectedKey} onChange={(e) => setSelectedKey(e.target.value)}>
-            {assignments.map((a) => (
-              <MenuItem key={assignmentKey(a)} value={assignmentKey(a)}>
-                {a.courseCode} - {a.courseName} ({a.programme}, {a.academicYear})
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-        {assignments.length === 0 && (
-          <Typography sx={{ color: '#94a3b8', fontSize: 13, mt: 1 }}>
-            You have no course assignments yet - an admin needs to assign you a course first.
-          </Typography>
-        )}
-      </Paper>
+      <AssignmentPickerField assignments={assignments} selectedKey={selectedKey} onChange={setSelectedKey} />
 
       {loading && <Typography sx={{ color: '#64748b' }}>Loading...</Typography>}
 

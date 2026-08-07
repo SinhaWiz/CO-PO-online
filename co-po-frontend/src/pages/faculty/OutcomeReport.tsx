@@ -1,13 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Alert,
   Box,
   Button,
-  FormControl,
-  InputLabel,
-  MenuItem,
   Paper,
-  Select,
   Table,
   TableBody,
   TableCell,
@@ -23,13 +19,10 @@ import {
   generateCoReport,
   generatePoReport,
   getCoAttainment,
-  getMyAssignments,
   getPoAttainment,
   type AttainmentResult,
-  type MyAssignment,
 } from '../../api/faculty';
-
-const assignmentKey = (a: MyAssignment) => `${a.courseCode}||${a.programme}||${a.academicYear}||${a.department}`;
+import { AssignmentPickerField, useAssignmentPicker } from '../../components/AssignmentPicker';
 
 interface OutcomeReportProps {
   kind: 'co' | 'po';
@@ -40,26 +33,15 @@ interface OutcomeReportProps {
 // at different attainment/generate endpoints, so it didn't make sense to fork the file.
 const OutcomeReport = ({ kind }: OutcomeReportProps) => {
   const label = kind === 'co' ? 'CO' : 'PO';
-  const [assignments, setAssignments] = useState<MyAssignment[]>([]);
-  const [selectedKey, setSelectedKey] = useState('');
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const { assignments, selectedKey, setSelectedKey, selectedAssignment } = useAssignmentPicker(
+    (text) => setMessage({ type: 'error', text }),
+  );
   const [attainment, setAttainment] = useState<AttainmentResult | null>(null);
   const [comments, setComments] = useState<Record<string, { comment: string; suggestions: string }>>({});
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [generatedFile, setGeneratedFile] = useState<string | null>(null);
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-
-  const selectedAssignment = useMemo(
-    () => assignments.find((a) => assignmentKey(a) === selectedKey) ?? null,
-    [assignments, selectedKey],
-  );
-
-  useEffect(() => {
-    getMyAssignments().then((res) => setAssignments(res.data)).catch((error) => {
-      console.error('Failed to load assignments', error);
-      setMessage({ type: 'error', text: 'Failed to load your course assignments.' });
-    });
-  }, []);
 
   useEffect(() => {
     setGeneratedFile(null);
@@ -151,23 +133,7 @@ const OutcomeReport = ({ kind }: OutcomeReportProps) => {
         </Alert>
       )}
 
-      <Paper sx={{ p: 2, mb: 2 }}>
-        <FormControl size="small" fullWidth>
-          <InputLabel>Course Assignment</InputLabel>
-          <Select label="Course Assignment" value={selectedKey} onChange={(e) => setSelectedKey(e.target.value)}>
-            {assignments.map((a) => (
-              <MenuItem key={assignmentKey(a)} value={assignmentKey(a)}>
-                {a.courseCode} - {a.courseName} ({a.programme}, {a.academicYear})
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-        {assignments.length === 0 && (
-          <Typography sx={{ color: '#94a3b8', fontSize: 13, mt: 1 }}>
-            You have no course assignments yet - an admin needs to assign you a course first.
-          </Typography>
-        )}
-      </Paper>
+      <AssignmentPickerField assignments={assignments} selectedKey={selectedKey} onChange={setSelectedKey} />
 
       {loading && <Typography sx={{ color: '#64748b' }}>Loading attainment...</Typography>}
 

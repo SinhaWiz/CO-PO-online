@@ -1,24 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  Alert,
-  Box,
-  Button,
-  FormControl,
-  InputLabel,
-  MenuItem,
-  Paper,
-  Select,
-  Typography,
-} from '@mui/material';
+import { useEffect, useRef, useState } from 'react';
+import { Alert, Box, Button, Paper, Typography } from '@mui/material';
 import {
   exportMarksExcel,
-  getMyAssignments,
   importMarksExcel,
   type MarksImportResult,
-  type MyAssignment,
 } from '../../api/faculty';
-
-const assignmentKey = (a: MyAssignment) => `${a.courseCode}||${a.programme}||${a.academicYear}||${a.department}`;
+import { AssignmentPickerField, useAssignmentPicker } from '../../components/AssignmentPicker';
 
 // Ports the desktop app's "Export Marks" / "Import Marks" sidebar buttons - a full
 // course roster (one sheet per assessment section, plus an Attendance sheet for
@@ -26,25 +13,14 @@ const assignmentKey = (a: MyAssignment) => `${a.courseCode}||${a.programme}||${a
 // offline, then the same file brought back in to save it. No on-screen preview here,
 // same as desktop - it's a file round-trip, not an editable form.
 const ExportImportMarks = () => {
-  const [assignments, setAssignments] = useState<MyAssignment[]>([]);
-  const [selectedKey, setSelectedKey] = useState('');
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const { assignments, selectedKey, setSelectedKey, selectedAssignment } = useAssignmentPicker(
+    (text) => setMessage({ type: 'error', text }),
+  );
   const [exporting, setExporting] = useState(false);
   const [importing, setImporting] = useState(false);
   const [result, setResult] = useState<MarksImportResult | null>(null);
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const selectedAssignment = useMemo(
-    () => assignments.find((a) => assignmentKey(a) === selectedKey) ?? null,
-    [assignments, selectedKey],
-  );
-
-  useEffect(() => {
-    getMyAssignments().then((res) => setAssignments(res.data)).catch((error) => {
-      console.error('Failed to load assignments', error);
-      setMessage({ type: 'error', text: 'Failed to load your course assignments.' });
-    });
-  }, []);
 
   useEffect(() => {
     setResult(null);
@@ -107,23 +83,7 @@ const ExportImportMarks = () => {
         </Alert>
       )}
 
-      <Paper sx={{ p: 2, mb: 2 }}>
-        <FormControl size="small" fullWidth>
-          <InputLabel>Course Assignment</InputLabel>
-          <Select label="Course Assignment" value={selectedKey} onChange={(e) => setSelectedKey(e.target.value)}>
-            {assignments.map((a) => (
-              <MenuItem key={assignmentKey(a)} value={assignmentKey(a)}>
-                {a.courseCode} - {a.courseName} ({a.programme}, {a.academicYear})
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-        {assignments.length === 0 && (
-          <Typography sx={{ color: '#94a3b8', fontSize: 13, mt: 1 }}>
-            You have no course assignments yet - an admin needs to assign you a course first.
-          </Typography>
-        )}
-      </Paper>
+      <AssignmentPickerField assignments={assignments} selectedKey={selectedKey} onChange={setSelectedKey} />
 
       {selectedAssignment && (
         <Paper sx={{ p: 2.5, mb: 2 }}>

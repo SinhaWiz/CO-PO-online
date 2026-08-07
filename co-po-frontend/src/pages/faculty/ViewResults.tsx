@@ -1,13 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Alert,
   Box,
   Chip,
-  FormControl,
-  InputLabel,
-  MenuItem,
   Paper,
-  Select,
   Table,
   TableBody,
   TableCell,
@@ -18,32 +14,16 @@ import {
 } from '@mui/material';
 import {
   getCourseResults,
-  getMyAssignments,
   type CourseResultData,
-  type MyAssignment,
 } from '../../api/faculty';
-
-const assignmentKey = (a: MyAssignment) => `${a.courseCode}||${a.programme}||${a.academicYear}||${a.department}`;
+import { AssignmentPickerField, useAssignmentPicker } from '../../components/AssignmentPicker';
 
 const ViewResults = () => {
-  const [assignments, setAssignments] = useState<MyAssignment[]>([]);
-  const [selectedKey, setSelectedKey] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const { assignments, selectedKey, setSelectedKey, selectedAssignment } = useAssignmentPicker(setError);
   const [data, setData] = useState<CourseResultData | null>(null);
   const [issue, setIssue] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const selectedAssignment = useMemo(
-    () => assignments.find((a) => assignmentKey(a) === selectedKey) ?? null,
-    [assignments, selectedKey],
-  );
-
-  useEffect(() => {
-    getMyAssignments().then((res) => setAssignments(res.data)).catch((err) => {
-      console.error('Failed to load assignments', err);
-      setError('Failed to load your course assignments.');
-    });
-  }, []);
 
   useEffect(() => {
     setData(null);
@@ -77,23 +57,7 @@ const ViewResults = () => {
         </Alert>
       )}
 
-      <Paper sx={{ p: 2, mb: 2 }}>
-        <FormControl size="small" fullWidth>
-          <InputLabel>Course Assignment</InputLabel>
-          <Select label="Course Assignment" value={selectedKey} onChange={(e) => setSelectedKey(e.target.value)}>
-            {assignments.map((a) => (
-              <MenuItem key={assignmentKey(a)} value={assignmentKey(a)}>
-                {a.courseCode} - {a.courseName} ({a.programme}, {a.academicYear})
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-        {assignments.length === 0 && (
-          <Typography sx={{ color: '#94a3b8', fontSize: 13, mt: 1 }}>
-            You have no course assignments yet - an admin needs to assign you a course first.
-          </Typography>
-        )}
-      </Paper>
+      <AssignmentPickerField assignments={assignments} selectedKey={selectedKey} onChange={setSelectedKey} />
 
       {loading && <Typography sx={{ color: '#64748b' }}>Loading...</Typography>}
 

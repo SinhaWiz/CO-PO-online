@@ -1,13 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Alert,
   Box,
   Button,
-  FormControl,
-  InputLabel,
-  MenuItem,
   Paper,
-  Select,
   Table,
   TableBody,
   TableCell,
@@ -20,20 +16,19 @@ import {
 import {
   downloadFacultyReport,
   generateSummaryReport,
-  getMyAssignments,
   getSummaryReportPreview,
-  type MyAssignment,
   type SummaryReportPreview,
 } from '../../api/faculty';
 import { summarizeFeedbackWithAI } from '../../api/reports';
-
-const assignmentKey = (a: MyAssignment) => `${a.courseCode}||${a.programme}||${a.academicYear}||${a.department}`;
+import { AssignmentPickerField, useAssignmentPicker } from '../../components/AssignmentPicker';
 
 const FEEDBACK_LIMITS = { feedback1: 500, feedback2: 700, improvementPlan: 1000 } as const;
 
 const SummaryReport = () => {
-  const [assignments, setAssignments] = useState<MyAssignment[]>([]);
-  const [selectedKey, setSelectedKey] = useState('');
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const { assignments, selectedKey, setSelectedKey, selectedAssignment } = useAssignmentPicker(
+    (text) => setMessage({ type: 'error', text }),
+  );
   const [preview, setPreview] = useState<SummaryReportPreview | null>(null);
   const [loading, setLoading] = useState(false);
   const [feedback1, setFeedback1] = useState('');
@@ -43,19 +38,6 @@ const SummaryReport = () => {
   const [summarizing, setSummarizing] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [generatedFile, setGeneratedFile] = useState<string | null>(null);
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-
-  const selectedAssignment = useMemo(
-    () => assignments.find((a) => assignmentKey(a) === selectedKey) ?? null,
-    [assignments, selectedKey],
-  );
-
-  useEffect(() => {
-    getMyAssignments().then((res) => setAssignments(res.data)).catch((error) => {
-      console.error('Failed to load assignments', error);
-      setMessage({ type: 'error', text: 'Failed to load your course assignments.' });
-    });
-  }, []);
 
   useEffect(() => {
     setGeneratedFile(null);
@@ -148,23 +130,7 @@ const SummaryReport = () => {
         </Alert>
       )}
 
-      <Paper sx={{ p: 2, mb: 2 }}>
-        <FormControl size="small" fullWidth>
-          <InputLabel>Course Assignment</InputLabel>
-          <Select label="Course Assignment" value={selectedKey} onChange={(e) => setSelectedKey(e.target.value)}>
-            {assignments.map((a) => (
-              <MenuItem key={assignmentKey(a)} value={assignmentKey(a)}>
-                {a.courseCode} - {a.courseName} ({a.programme}, {a.academicYear})
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-        {assignments.length === 0 && (
-          <Typography sx={{ color: '#94a3b8', fontSize: 13, mt: 1 }}>
-            You have no course assignments yet - an admin needs to assign you a course first.
-          </Typography>
-        )}
-      </Paper>
+      <AssignmentPickerField assignments={assignments} selectedKey={selectedKey} onChange={setSelectedKey} />
 
       {loading && <Typography sx={{ color: '#64748b' }}>Loading...</Typography>}
 

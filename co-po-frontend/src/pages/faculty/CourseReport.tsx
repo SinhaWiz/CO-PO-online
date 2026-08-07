@@ -1,19 +1,15 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Alert,
   Box,
   Button,
   Checkbox,
   Divider,
-  FormControl,
   FormControlLabel,
   IconButton,
-  InputLabel,
-  MenuItem,
   Paper,
   Radio,
   RadioGroup,
-  Select,
   Table,
   TableBody,
   TableCell,
@@ -28,17 +24,15 @@ import {
   downloadFacultyReport,
   generateCourseReport,
   getCourseReportContext,
-  getMyAssignments,
   saveCourseReportDraft,
   type ActionPlanRow,
   type CoAttainmentRow,
   type CourseReportForm,
   type CourseReportSeed,
-  type MyAssignment,
   type TopicRow,
 } from '../../api/faculty';
+import { AssignmentPickerField, useAssignmentPicker } from '../../components/AssignmentPicker';
 
-const assignmentKey = (a: MyAssignment) => `${a.courseCode}||${a.programme}||${a.academicYear}||${a.department}`;
 const AUTOSAVE_DELAY_MS = 1500;
 
 const emptyForm = (seed: CourseReportSeed): CourseReportForm => ({
@@ -101,8 +95,10 @@ const buildInitialForm = (seed: CourseReportSeed, draft: CourseReportForm | null
 };
 
 const CourseReport = () => {
-  const [assignments, setAssignments] = useState<MyAssignment[]>([]);
-  const [selectedKey, setSelectedKey] = useState('');
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const { assignments, selectedKey, setSelectedKey, selectedAssignment } = useAssignmentPicker(
+    (text) => setMessage({ type: 'error', text }),
+  );
   const [seed, setSeed] = useState<CourseReportSeed | null>(null);
   const [form, setForm] = useState<CourseReportForm | null>(null);
   const [loading, setLoading] = useState(false);
@@ -111,22 +107,9 @@ const CourseReport = () => {
   const [generating, setGenerating] = useState(false);
   const [generatedFile, setGeneratedFile] = useState<string | null>(null);
   const [issues, setIssues] = useState<string[]>([]);
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const saveTimerRef = useRef<number | null>(null);
   const skipAutosaveRef = useRef(false);
-
-  const selectedAssignment = useMemo(
-    () => assignments.find((a) => assignmentKey(a) === selectedKey) ?? null,
-    [assignments, selectedKey],
-  );
-
-  useEffect(() => {
-    getMyAssignments().then((res) => setAssignments(res.data)).catch((error) => {
-      console.error('Failed to load assignments', error);
-      setMessage({ type: 'error', text: 'Failed to load your course assignments.' });
-    });
-  }, []);
 
   useEffect(() => {
     setGeneratedFile(null);
@@ -318,23 +301,7 @@ const CourseReport = () => {
         </Alert>
       )}
 
-      <Paper sx={{ p: 2, mb: 2 }}>
-        <FormControl size="small" fullWidth>
-          <InputLabel>Course Assignment</InputLabel>
-          <Select label="Course Assignment" value={selectedKey} onChange={(e) => setSelectedKey(e.target.value)}>
-            {assignments.map((a) => (
-              <MenuItem key={assignmentKey(a)} value={assignmentKey(a)}>
-                {a.courseCode} - {a.courseName} ({a.programme}, {a.academicYear})
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-        {assignments.length === 0 && (
-          <Typography sx={{ color: '#94a3b8', fontSize: 13, mt: 1 }}>
-            You have no course assignments yet - an admin needs to assign you a course first.
-          </Typography>
-        )}
-      </Paper>
+      <AssignmentPickerField assignments={assignments} selectedKey={selectedKey} onChange={setSelectedKey} />
 
       {loading && <Typography sx={{ color: '#64748b' }}>Loading...</Typography>}
 
