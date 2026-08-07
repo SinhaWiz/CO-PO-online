@@ -26,6 +26,7 @@ import FacultyChangePassword from './pages/faculty/ChangePassword';
 import COReport from './pages/faculty/COReport';
 import POReport from './pages/faculty/POReport';
 import CourseReport from './pages/faculty/CourseReport';
+import SummaryReport from './pages/faculty/SummaryReport';
 
 // Components
 import AdminDashboardHome from './pages/admin/AdminDashboardHome';
@@ -78,6 +79,7 @@ function App() {
           <Route path="reports/co" element={<COReport />} />
           <Route path="reports/po" element={<POReport />} />
           <Route path="reports/course" element={<CourseReport />} />
+          <Route path="reports/summary" element={<SummaryReport />} />
           <Route path="change-password" element={<FacultyChangePassword />} />
         </Route>
 

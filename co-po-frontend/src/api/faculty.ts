@@ -276,3 +276,58 @@ export const clearCourseReportDraft = (courseCode: string, programme: string, ac
 export const generateCourseReport = (
   courseCode: string, programme: string, academicYear: string, department: string, form: CourseReportForm,
 ) => api.post<GenerateCourseReportResult>(`${courseReportUrl(courseCode, programme, academicYear, department)}/generate`, form);
+
+export interface EvaluationRow {
+  studentId: string;
+  studentName: string;
+  obtainedByCo: Record<string, number>;
+}
+
+export interface CoHistogramRow {
+  coCode: string;
+  bucketCounts: number[];
+}
+
+export interface AttainmentStatusRow {
+  coCode: string;
+  achievedPercent: number;
+  satisfied: boolean;
+}
+
+export interface SummaryReportPreview {
+  courseName: string;
+  credits: number | null;
+  semester: string;
+  majorityBatch: number;
+  totalStudents: number;
+  coIndividualThreshold: number;
+  coCohortThreshold: number;
+  coCodes: string[];
+  coMaxMarks: Record<string, number>;
+  evaluationSheet: EvaluationRow[];
+  histogram: CoHistogramRow[];
+  thresholdInStandardRange: boolean;
+  attainmentStatus: AttainmentStatusRow[];
+  issues: string[];
+}
+
+export interface GenerateSummaryReportRequest {
+  feedback1: string;
+  feedback2: string;
+  improvementPlan: string;
+}
+
+export interface GenerateSummaryReportResult {
+  pdfFileName: string | null;
+  issues: string[];
+}
+
+const summaryReportUrl = (courseCode: string, programme: string, academicYear: string, department: string) =>
+  `/faculty/summary-report/${encodeURIComponent(courseCode)}/${encodeURIComponent(programme)}/${encodeURIComponent(academicYear)}/${encodeURIComponent(department)}`;
+
+export const getSummaryReportPreview = (courseCode: string, programme: string, academicYear: string, department: string) =>
+  api.get<SummaryReportPreview>(summaryReportUrl(courseCode, programme, academicYear, department));
+
+export const generateSummaryReport = (
+  courseCode: string, programme: string, academicYear: string, department: string, request: GenerateSummaryReportRequest,
+) => api.post<GenerateSummaryReportResult>(`${summaryReportUrl(courseCode, programme, academicYear, department)}/generate`, request);
