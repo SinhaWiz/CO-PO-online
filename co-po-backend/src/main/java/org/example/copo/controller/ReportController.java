@@ -50,4 +50,21 @@ public class ReportController {
             return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
         }
     }
+
+    @PreAuthorize("hasAnyRole('ADMIN', 'FACULTY')")
+    @PostMapping("/feedback/summarize")
+    public ResponseEntity<Map<String, String>> summarizeFeedback(@RequestBody Map<String, String> params) {
+        String rawFeedback = params.getOrDefault("rawFeedback", "");
+        if (rawFeedback.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Paste some feedback text first."));
+        }
+        String projectId = params.getOrDefault("projectId", "dummy-project");
+        String location = params.getOrDefault("location", "us-central1");
+        try {
+            String summary = reportService.summarizeFeedback(rawFeedback, projectId, location);
+            return ResponseEntity.ok(Map.of("summary", summary));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
+        }
+    }
 }

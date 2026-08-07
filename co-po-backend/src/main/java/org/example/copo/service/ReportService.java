@@ -69,6 +69,32 @@ public class ReportService {
         }
     }
 
+    // Ports the desktop app's "Summarize Feedbacks" button from the Summary Report
+    // screen. Desktop called an external BYOK service (ApiFree.ai) with a faculty-
+    // supplied API key pasted into the UI - reoriented here to reuse the Vertex AI
+    // pathway generateCourseSummaryWithAI already established instead of introducing a
+    // second, unrelated third-party AI integration and a new credential the app would
+    // have to handle. Same graceful fallback if GCP isn't configured, same
+    // project/location params - proper secrets/config management for this is phase
+    // 10.2's job, not this one's.
+    public String summarizeFeedback(String rawFeedback, String projectId, String location) throws Exception {
+        String prompt = "Summarize the following student feedback for a university course in one concise "
+            + "paragraph, highlighting the main themes, what students appreciated, and areas for improvement:\n\n"
+            + rawFeedback;
+
+        try (VertexAI vertexAI = new VertexAI(projectId, location)) {
+            GenerativeModel model = new GenerativeModel("gemini-1.5-pro", vertexAI);
+            GenerateContentResponse response = model.generateContent(
+                ContentMaker.fromMultiModalData(
+                    PartMaker.fromMimeTypeAndData("text/plain", prompt.getBytes())
+                )
+            );
+            return response.getCandidates(0).getContent().getParts(0).getText();
+        } catch (Exception e) {
+            return "AI summarization failed (likely GCP unauthenticated or missing endpoint). Raw feedback was: \n\n" + rawFeedback;
+        }
+    }
+
     public String generateCourseSummaryWithAI(String projectId, String location) throws Exception {
         List<Course> courses = courseRepository.findAll();
         StringBuilder payload = new StringBuilder("Summarize the following academic courses:\n");
