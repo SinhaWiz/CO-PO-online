@@ -28,6 +28,7 @@ import {
   getCourseAssignments,
   getCourses,
   getFaculties,
+  importCourseAssignments,
   updateAssignmentThresholds,
   type Course,
   type CourseAssignment,
@@ -35,6 +36,7 @@ import {
   type Thresholds,
 } from '../../api/admin';
 import { useConfirmDialog } from '../../components/ConfirmDialog';
+import BulkImportButton from '../../components/BulkImportButton';
 
 const defaultThresholds: Thresholds = { coIndividual: 60, poIndividual: 40, coCohort: 50, poCohort: 50 };
 
@@ -327,6 +329,7 @@ const ManageCourseAssignments = () => {
             <Button variant="outlined" onClick={clearAssignForm}>
               Clear
             </Button>
+            <BulkImportButton label="Bulk Import (Excel)" onImport={importCourseAssignments} onComplete={loadData} />
           </Box>
         </Box>
 

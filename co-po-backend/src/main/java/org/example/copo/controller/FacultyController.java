@@ -3,11 +3,14 @@ package org.example.copo.controller;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.copo.entity.Faculty;
+import org.example.copo.service.BulkImportService;
 import org.example.copo.service.FacultyService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -16,6 +19,7 @@ import java.util.List;
 public class FacultyController {
 
     private final FacultyService facultyService;
+    private final BulkImportService bulkImportService;
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
@@ -40,5 +44,11 @@ public class FacultyController {
     public ResponseEntity<?> deleteFaculty(@PathVariable String id) {
         facultyService.deleteFaculty(id);
         return ResponseEntity.ok().build();
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/import")
+    public ResponseEntity<BulkImportService.ImportResult> importFaculties(@RequestParam MultipartFile file) throws IOException {
+        return ResponseEntity.ok(bulkImportService.importFaculties(file));
     }
 }

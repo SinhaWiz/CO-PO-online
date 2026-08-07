@@ -6,13 +6,16 @@ import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.example.copo.entity.Course;
 import org.example.copo.entity.CourseAssessmentSection;
+import org.example.copo.service.BulkImportService;
 import org.example.copo.service.CourseAssessmentSectionService;
 import org.example.copo.service.CourseOutcomeService;
 import org.example.copo.service.CourseService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -23,6 +26,7 @@ public class CourseController {
     private final CourseService courseService;
     private final CourseOutcomeService courseOutcomeService;
     private final CourseAssessmentSectionService sectionService;
+    private final BulkImportService bulkImportService;
 
     public record CourseOutcomesRequest(List<Integer> coIds, List<Integer> poIds) {}
     public record SectionRequest(@NotBlank String displayName, @NotNull Integer sectionOrder) {}
@@ -103,5 +107,11 @@ public class CourseController {
     ) {
         sectionService.deleteSection(id);
         return ResponseEntity.ok().build();
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/import")
+    public ResponseEntity<BulkImportService.ImportResult> importCourses(@RequestParam MultipartFile file) throws IOException {
+        return ResponseEntity.ok(bulkImportService.importCourses(file));
     }
 }

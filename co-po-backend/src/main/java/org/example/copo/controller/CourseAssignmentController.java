@@ -3,12 +3,15 @@ package org.example.copo.controller;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.copo.entity.CourseAssignment;
+import org.example.copo.service.BulkImportService;
 import org.example.copo.service.CourseAssignmentService;
 import org.example.copo.service.CourseAssignmentThresholdService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -18,6 +21,7 @@ public class CourseAssignmentController {
 
     private final CourseAssignmentService assignmentService;
     private final CourseAssignmentThresholdService thresholdService;
+    private final BulkImportService bulkImportService;
 
     public record ThresholdsRequest(double coIndividual, double poIndividual, double coCohort, double poCohort) {}
 
@@ -77,5 +81,11 @@ public class CourseAssignmentController {
                 request.coIndividual(), request.poIndividual(), request.coCohort(), request.poCohort()
             )
         ));
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/import")
+    public ResponseEntity<BulkImportService.ImportResult> importAssignments(@RequestParam MultipartFile file) throws IOException {
+        return ResponseEntity.ok(bulkImportService.importCourseAssignments(file));
     }
 }

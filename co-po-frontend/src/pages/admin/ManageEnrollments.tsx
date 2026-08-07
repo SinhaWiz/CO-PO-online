@@ -24,11 +24,13 @@ import {
   getCourses,
   getEnrollments,
   getStudents,
+  importEnrollments,
   type Course,
   type Enrollment,
   type Student,
 } from '../../api/admin';
 import { useConfirmDialog } from '../../components/ConfirmDialog';
+import BulkImportButton from '../../components/BulkImportButton';
 
 const ACADEMIC_YEAR_REGEX = /^\d{4}-\d{4}$/;
 
@@ -351,6 +353,11 @@ const ManageEnrollments = () => {
           <Button variant="outlined" onClick={handleSelectAllFiltered}>
             Toggle Select Filtered
           </Button>
+          <BulkImportButton
+            label="Bulk Import (Excel)"
+            onImport={(file) => importEnrollments(file, selectedCourse?.courseCode, selectedCourse?.programme, academicYear)}
+            onComplete={loadData}
+          />
         </Box>
       </Paper>
 

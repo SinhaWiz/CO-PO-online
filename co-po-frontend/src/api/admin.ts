@@ -1,5 +1,12 @@
 import api from './axios';
 
+export interface ImportResult {
+  inserted: number;
+  skipped: number;
+  mapped: number;
+  errors: string[];
+}
+
 // Interfaces matching Backend Entities
 export interface Faculty {
   id: string;
@@ -107,11 +114,21 @@ export interface AdminsResponse {
 export const getFaculties = () => api.get<Faculty[]>('/admin/faculties');
 export const createFaculty = (data: Faculty) => api.post<Faculty>('/admin/faculties', data);
 export const deleteFaculty = (id: string) => api.delete(`/admin/faculties/${id}`);
+export const importFaculties = (file: File) => {
+  const form = new FormData();
+  form.append('file', file);
+  return api.post<ImportResult>('/admin/faculties/import', form);
+};
 
 // Students API
 export const getStudents = () => api.get<Student[]>('/admin/students');
 export const createStudent = (data: Student) => api.post<Student>('/admin/students', data);
 export const deleteStudent = (id: string) => api.delete(`/admin/students/${id}`);
+export const importStudents = (file: File) => {
+  const form = new FormData();
+  form.append('file', file);
+  return api.post<ImportResult>('/admin/students/import', form);
+};
 
 // Courses API
 export const getCourses = () => api.get<Course[]>('/admin/courses');
@@ -120,6 +137,11 @@ export const updateCourse = (courseCode: string, programme: string, data: Course
   api.put<Course>(`/admin/courses/${encodeURIComponent(courseCode)}/${encodeURIComponent(programme)}`, data);
 export const deleteCourse = (courseCode: string, programme: string) =>
   api.delete(`/admin/courses/${encodeURIComponent(courseCode)}/${encodeURIComponent(programme)}`);
+export const importCourses = (file: File) => {
+  const form = new FormData();
+  form.append('file', file);
+  return api.post<ImportResult>('/admin/courses/import', form);
+};
 
 export interface CourseOutcomes {
   coIds: number[];
@@ -172,6 +194,16 @@ export const deleteEnrollment = (studentId: string, courseId: string, programme:
   api.delete(
     `/admin/enrollments/${encodeURIComponent(studentId)}/${encodeURIComponent(courseId)}/${encodeURIComponent(programme)}/${encodeURIComponent(academicYear)}`,
   );
+export const importEnrollments = (
+  file: File, defaultCourseCode?: string, defaultProgramme?: string, defaultAcademicYear?: string,
+) => {
+  const form = new FormData();
+  form.append('file', file);
+  if (defaultCourseCode) form.append('defaultCourseCode', defaultCourseCode);
+  if (defaultProgramme) form.append('defaultProgramme', defaultProgramme);
+  if (defaultAcademicYear) form.append('defaultAcademicYear', defaultAcademicYear);
+  return api.post<ImportResult>('/admin/enrollments/import', form);
+};
 
 // Course assignments API
 export const getCourseAssignments = () => api.get<CourseAssignment[]>('/admin/assignments');
@@ -180,6 +212,11 @@ export const deleteCourseAssignment = (courseCode: string, programme: string, ac
   api.delete(
     `/admin/assignments/${encodeURIComponent(courseCode)}/${encodeURIComponent(programme)}/${encodeURIComponent(academicYear)}/${encodeURIComponent(department)}`,
   );
+export const importCourseAssignments = (file: File) => {
+  const form = new FormData();
+  form.append('file', file);
+  return api.post<ImportResult>('/admin/assignments/import', form);
+};
 
 const assignmentThresholdsUrl = (courseCode: string, programme: string, academicYear: string, department: string) =>
   `/admin/assignments/${encodeURIComponent(courseCode)}/${encodeURIComponent(programme)}/${encodeURIComponent(academicYear)}/${encodeURIComponent(department)}/thresholds`;

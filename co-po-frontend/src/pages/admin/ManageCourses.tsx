@@ -29,6 +29,7 @@ import {
   getCourseSections,
   getCourses,
   getPOs,
+  importCourses,
   updateCourse,
   updateCourseOutcomes,
   updateCourseSection,
@@ -38,6 +39,7 @@ import {
   type ProgramOutcome,
 } from '../../api/admin';
 import { useConfirmDialog } from '../../components/ConfirmDialog';
+import BulkImportButton from '../../components/BulkImportButton';
 
 const COURSE_CODE_REGEX = /^[A-Z]{3}\s\d{4}$/;
 const DEPARTMENT_REGEX = /^[A-Z]{3}$/;
@@ -373,6 +375,7 @@ const ManageCourses = () => {
           <Button variant="outlined" onClick={clearForm}>
             Clear
           </Button>
+          <BulkImportButton label="Bulk Import (Excel)" onImport={importCourses} onComplete={fetchCourses} />
         </Box>
       </Paper>
 

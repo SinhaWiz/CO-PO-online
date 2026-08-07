@@ -12,8 +12,9 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { getFaculties, createFaculty, deleteFaculty } from '../../api/admin';
+import { getFaculties, createFaculty, deleteFaculty, importFaculties } from '../../api/admin';
 import type { Faculty } from '../../api/admin';
+import BulkImportButton from '../../components/BulkImportButton';
 
 const ManageFaculties = () => {
   const [faculties, setFaculties] = useState<Faculty[]>([]);
@@ -96,9 +97,7 @@ const ManageFaculties = () => {
           <Button variant="outlined" disabled>
             Get Excel Template
           </Button>
-          <Button variant="outlined" disabled>
-            Bulk Import (Excel)
-          </Button>
+          <BulkImportButton label="Bulk Import (Excel)" onImport={importFaculties} onComplete={fetchFaculties} />
         </Box>
       </Paper>
 

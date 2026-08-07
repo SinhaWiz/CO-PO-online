@@ -12,8 +12,9 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { getStudents, createStudent, deleteStudent } from '../../api/admin';
+import { getStudents, createStudent, deleteStudent, importStudents } from '../../api/admin';
 import type { Student } from '../../api/admin';
+import BulkImportButton from '../../components/BulkImportButton';
 
 const ManageStudents = () => {
   const [students, setStudents] = useState<Student[]>([]);
@@ -99,9 +100,7 @@ const ManageStudents = () => {
           <Button variant="outlined" disabled>
             Get Excel Template
           </Button>
-          <Button variant="outlined" disabled>
-            Bulk Import (Excel)
-          </Button>
+          <BulkImportButton label="Bulk Import (Excel)" onImport={importStudents} onComplete={fetchStudents} />
         </Box>
       </Paper>
 
