@@ -130,6 +130,49 @@
                     </excludes>
                 </configuration>
             </plugin>
+
+            <!-- Spring Boot auto-runs migrations on every app startup via the
+                 flyway-core/flyway-mysql runtime dependencies above - that's the only
+                 way Flyway has run in this project so far. This plugin adds the CLI
+                 commands (mvnw flyway:info, flyway:validate, flyway:migrate,
+                 flyway:repair) for checking or running migrations without booting the
+                 whole app - useful in CI as a separate pre-deploy step, or for
+                 troubleshooting migration state directly. No explicit version here -
+                 spring-boot-starter-parent already manages one (currently 10.10.0,
+                 matching flyway-core's own resolved version - `mvnw dependency:tree |
+                 grep flyway` confirms), so the CLI and the app's own runtime Flyway
+                 move together automatically on every Spring Boot upgrade instead of
+                 needing to be kept in sync by hand.
+
+                 Needs the same DB_URL/DB_USERNAME/DB_PASSWORD env vars the app itself
+                 requires (see application.yml) - this plugin runs outside the Spring
+                 context entirely, so it does not read application.yml at all and has
+                 no defaults of its own. Example: DB_URL=jdbc:mysql://127.0.0.1:3306/co_po
+                 DB_USERNAME=root DB_PASSWORD=... mvnw flyway:info -->
+            <plugin>
+                <groupId>org.flywaydb</groupId>
+                <artifactId>flyway-maven-plugin</artifactId>
+                <configuration>
+                    <url>${env.DB_URL}</url>
+                    <user>${env.DB_USERNAME}</user>
+                    <password>${env.DB_PASSWORD}</password>
+                    <locations>
+                        <location>classpath:db/migration</location>
+                    </locations>
+                </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.flywaydb</groupId>
+                        <artifactId>flyway-mysql</artifactId>
+                        <version>10.10.0</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>com.mysql</groupId>
+                        <artifactId>mysql-connector-j</artifactId>
+                        <version>8.3.0</version>
+                    </dependency>
+                </dependencies>
+            </plugin>
         </plugins>
     </build>
 </project>
