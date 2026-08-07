@@ -331,3 +331,27 @@ export const getSummaryReportPreview = (courseCode: string, programme: string, a
 export const generateSummaryReport = (
   courseCode: string, programme: string, academicYear: string, department: string, request: GenerateSummaryReportRequest,
 ) => api.post<GenerateSummaryReportResult>(`${summaryReportUrl(courseCode, programme, academicYear, department)}/generate`, request);
+
+export interface MarksReportResult {
+  fileName: string | null;
+  issues: string[];
+}
+
+const marksReportUrl = (courseCode: string, programme: string, academicYear: string, department: string) =>
+  `/faculty/marks-report/${encodeURIComponent(courseCode)}/${encodeURIComponent(programme)}/${encodeURIComponent(academicYear)}/${encodeURIComponent(department)}`;
+
+// Both reports are read-only computed dumps (no faculty free text), so unlike the
+// other reports there's nothing to preview on screen first - pick sections, generate,
+// download, same as the desktop app's own pickers.
+export const generateDetailedMarksReport = (
+  courseCode: string, programme: string, academicYear: string, department: string,
+  sectionIds: number[], includeOverallCoAttainment: boolean,
+) => api.post<MarksReportResult>(`${marksReportUrl(courseCode, programme, academicYear, department)}/detailed`, {
+  sectionIds, includeOverallCoAttainment,
+});
+
+export const generateConsolidatedMarksReport = (
+  courseCode: string, programme: string, academicYear: string, department: string, sectionIds: number[],
+) => api.post<MarksReportResult>(`${marksReportUrl(courseCode, programme, academicYear, department)}/consolidated`, {
+  sectionIds,
+});

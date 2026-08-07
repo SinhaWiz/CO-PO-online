@@ -241,6 +241,7 @@ public class AdminReportService {
         files.addAll(scanDir(resolveReportDir("course_reports"), "Course"));
         files.addAll(scanDir(resolveReportDir("summary_reports"), "Summary"));
         files.addAll(scanDir(resolveReportDir("detailed_marks_reports"), "Detailed"));
+        files.addAll(scanDir(resolveReportDir("consolidated_marks_reports"), "Consolidated"));
         files.addAll(scanDir(resolveReportDir("cohort_po_reports"), "Cohort PO"));
         files.sort(Comparator.comparing(ReportFileDto::type).thenComparing(ReportFileDto::name));
         return files;
@@ -253,6 +254,7 @@ public class AdminReportService {
             case "Course" -> resolveReportDir("course_reports");
             case "Summary" -> resolveReportDir("summary_reports");
             case "Detailed" -> resolveReportDir("detailed_marks_reports");
+            case "Consolidated" -> resolveReportDir("consolidated_marks_reports");
             case "Cohort PO" -> resolveReportDir("cohort_po_reports");
             default -> null;
         };
@@ -264,6 +266,17 @@ public class AdminReportService {
             return null;
         }
         return file.toFile();
+    }
+
+    // Every report used to be a PDF, so both download endpoints hardcoded that content
+    // type - Consolidated Marks Report is the first .xlsx, so downloads need to pick
+    // the right one instead of mislabeling a spreadsheet as a PDF.
+    public static String contentTypeFor(File file) {
+        String lower = file.getName().toLowerCase(Locale.ROOT);
+        if (lower.endsWith(".xlsx")) {
+            return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+        }
+        return "application/pdf";
     }
 
     private CourseAssessmentBundle buildAssessmentBundle(String courseCode, String programme, String academicYear, List<String> issues) {
@@ -397,7 +410,10 @@ public class AdminReportService {
 
         try (var stream = Files.list(dir)) {
             stream.filter(Files::isRegularFile)
-                .filter(p -> p.getFileName().toString().toLowerCase(Locale.ROOT).endsWith(".pdf"))
+                .filter(p -> {
+                    String lower = p.getFileName().toString().toLowerCase(Locale.ROOT);
+                    return lower.endsWith(".pdf") || lower.endsWith(".xlsx");
+                })
                 .forEach(p -> {
                     try {
                         long size = Files.size(p);

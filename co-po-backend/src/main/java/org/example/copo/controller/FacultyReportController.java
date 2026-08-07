@@ -61,7 +61,7 @@ public class FacultyReportController {
 
         Resource resource = new FileSystemResource(file);
         return ResponseEntity.ok()
-            .contentType(MediaType.APPLICATION_PDF)
+            .contentType(MediaType.parseMediaType(AdminReportService.contentTypeFor(file)))
             .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + file.getName() + "\"")
             .body(resource);
     }

@@ -185,15 +185,17 @@ public class AttainmentService {
         return new AttainmentResult(rows, List.of());
     }
 
-    public AttainmentResult getPoAttainment(
-        String facultyEmail, String courseCode, String programme, String academicYear, String department
-    ) {
-        authorizationService.requireAssignedToCourse(facultyEmail, courseCode, programme, academicYear);
+    // Mirrors buildCoMatrix, but a question can map to more than one PO, so the
+    // structure differs slightly (questionIdToPos is a List per question, not a single
+    // value) - kept as an independent method rather than a shared generic since the
+    // CO/PO shapes genuinely diverge here, not just in name.
+    public record PoMatrix(List<String> studentIds, Map<String, Double> poTotal, Map<String, Map<String, Double>> studentPoObtained, List<String> issues) {}
 
+    public PoMatrix buildPoMatrix(String courseCode, String programme, String academicYear) {
         List<CourseAssessmentSection> sections =
             sectionRepository.findByCourseCodeAndProgrammeOrderBySectionOrderAsc(courseCode, programme);
         if (sections.isEmpty()) {
-            return blocked("No assessment sections configured for this course.");
+            return blockedPoMatrix("No assessment sections configured for this course.");
         }
 
         Map<Integer, String> poNumberById = new HashMap<>();
@@ -235,7 +237,7 @@ public class AttainmentService {
         }
 
         if (!issues.isEmpty()) {
-            return new AttainmentResult(List.of(), issues);
+            return new PoMatrix(List.of(), Map.of(), Map.of(), issues);
         }
 
         // A question can map to more than one PO - its marks count toward every PO
@@ -257,13 +259,13 @@ public class AttainmentService {
         }
 
         if (poTotal.isEmpty()) {
-            return blocked("Questions exist but none have PO mappings.");
+            return blockedPoMatrix("Questions exist but none have PO mappings.");
         }
 
         List<Enrollment> enrollments = enrollmentRepository.findByCourseIdAndProgrammeAndAcademicYear(courseCode, programme, academicYear);
         List<String> studentIds = enrollments.stream().map(Enrollment::getStudentId).distinct().toList();
         if (studentIds.isEmpty()) {
-            return blocked("No students enrolled for this course in " + academicYear + ".");
+            return blockedPoMatrix("No students enrolled for this course in " + academicYear + ".");
         }
 
         List<Integer> questionIds = new ArrayList<>(questionIdToPos.keySet());
@@ -293,21 +295,38 @@ public class AttainmentService {
         }
 
         if (graded == 0) {
-            return blocked("No marks have been entered yet.");
+            return blockedPoMatrix("No marks have been entered yet.");
         }
         if (graded < totalRequired) {
-            return blocked("Not all required marks are graded yet (" + graded + " of " + totalRequired + ").");
+            return blockedPoMatrix("Not all required marks are graded yet (" + graded + " of " + totalRequired + ").");
+        }
+
+        return new PoMatrix(studentIds, poTotal, studentPoObtained, List.of());
+    }
+
+    private PoMatrix blockedPoMatrix(String issue) {
+        return new PoMatrix(List.of(), Map.of(), Map.of(), List.of(issue));
+    }
+
+    public AttainmentResult getPoAttainment(
+        String facultyEmail, String courseCode, String programme, String academicYear, String department
+    ) {
+        authorizationService.requireAssignedToCourse(facultyEmail, courseCode, programme, academicYear);
+
+        PoMatrix matrix = buildPoMatrix(courseCode, programme, academicYear);
+        if (!matrix.issues().isEmpty()) {
+            return new AttainmentResult(List.of(), matrix.issues());
         }
 
         double threshold = thresholdService.getThresholds(courseCode, programme, academicYear, department).poIndividual() / 100.0;
 
         Map<String, Integer> attainedCounts = new HashMap<>();
-        for (String po : poTotal.keySet()) attainedCounts.put(po, 0);
+        for (String po : matrix.poTotal().keySet()) attainedCounts.put(po, 0);
 
-        for (String studentId : studentIds) {
-            Map<String, Double> gotMap = studentPoObtained.get(studentId);
-            for (String po : poTotal.keySet()) {
-                double denom = poTotal.get(po);
+        for (String studentId : matrix.studentIds()) {
+            Map<String, Double> gotMap = matrix.studentPoObtained().get(studentId);
+            for (String po : matrix.poTotal().keySet()) {
+                double denom = matrix.poTotal().get(po);
                 if (denom <= 0) continue;
                 double got = gotMap.getOrDefault(po, 0.0);
                 if (got / denom >= threshold) {
@@ -316,9 +335,9 @@ public class AttainmentService {
             }
         }
 
-        List<OutcomeAttainmentRow> rows = poTotal.keySet().stream()
+        List<OutcomeAttainmentRow> rows = matrix.poTotal().keySet().stream()
             .sorted(Comparator.comparingInt(AttainmentService::extractNumber))
-            .map(po -> new OutcomeAttainmentRow(po, attainedCounts.getOrDefault(po, 0) * 100.0 / studentIds.size()))
+            .map(po -> new OutcomeAttainmentRow(po, attainedCounts.getOrDefault(po, 0) * 100.0 / matrix.studentIds().size()))
             .toList();
 
         return new AttainmentResult(rows, List.of());
