@@ -12,13 +12,16 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { getFaculties, createFaculty, deleteFaculty, importFaculties } from '../../api/admin';
+import { getFaculties, createFaculty, updateFaculty, deleteFaculty, importFaculties } from '../../api/admin';
 import type { Faculty } from '../../api/admin';
 import BulkImportButton from '../../components/BulkImportButton';
 
+const emptyForm: Faculty = { id: '', shortname: '', fullName: '', email: '', password: '' };
+
 const ManageFaculties = () => {
   const [faculties, setFaculties] = useState<Faculty[]>([]);
-  const [form, setForm] = useState<Faculty>({ id: '', shortname: '', fullName: '', email: '', password: '' });
+  const [form, setForm] = useState<Faculty>(emptyForm);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const fetchFaculties = async () => {
     try {
@@ -33,19 +36,37 @@ const ManageFaculties = () => {
     fetchFaculties();
   }, []);
 
-  const handleAdd = async () => {
+  const handleSave = async () => {
     try {
-      await createFaculty(form);
-      setForm({ id: '', shortname: '', fullName: '', email: '', password: '' });
+      if (editingId) {
+        await updateFaculty(editingId, form);
+      } else {
+        await createFaculty(form);
+      }
+      setForm(emptyForm);
+      setEditingId(null);
       fetchFaculties();
     } catch (error) {
-      console.error('Failed to add faculty', error);
+      console.error('Failed to save faculty', error);
     }
+  };
+
+  const handleEdit = (faculty: Faculty) => {
+    // password comes back empty from the API (write-only field) - leaving it blank
+    // here means "keep the current password", matching updateFaculty's own behavior.
+    setForm({ ...faculty, password: '' });
+    setEditingId(faculty.id);
+  };
+
+  const handleCancelEdit = () => {
+    setForm(emptyForm);
+    setEditingId(null);
   };
 
   const handleDelete = async (id: string) => {
     try {
       await deleteFaculty(id);
+      if (editingId === id) handleCancelEdit();
       fetchFaculties();
     } catch (error) {
       console.error('Failed to delete faculty', error);
@@ -58,7 +79,13 @@ const ManageFaculties = () => {
       
       <Paper sx={{ p: 2, mb: 2 }}>
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(5, 1fr)' }, gap: 1.5 }}>
-          <TextField label="ID" value={form.id} onChange={(e) => setForm({ ...form, id: e.target.value })} size="small" />
+          <TextField
+            label="ID"
+            value={form.id}
+            onChange={(e) => setForm({ ...form, id: e.target.value })}
+            size="small"
+            disabled={Boolean(editingId)}
+          />
           <TextField
             label="Short Name"
             value={form.shortname}
@@ -79,7 +106,7 @@ const ManageFaculties = () => {
             size="small"
           />
           <TextField
-            label="Password"
+            label={editingId ? 'New Password (leave blank to keep current)' : 'Password'}
             type="password"
             value={form.password}
             onChange={(e) => setForm({ ...form, password: e.target.value })}
@@ -88,12 +115,14 @@ const ManageFaculties = () => {
         </Box>
 
         <Box sx={{ mt: 2, display: 'flex', gap: 1.25, flexWrap: 'wrap' }}>
-          <Button variant="contained" onClick={handleAdd}>
-            Add Faculty
+          <Button variant="contained" onClick={handleSave}>
+            {editingId ? 'Update Faculty' : 'Add Faculty'}
           </Button>
-          <Button variant="outlined" disabled>
-            Edit Faculty
-          </Button>
+          {editingId && (
+            <Button variant="outlined" onClick={handleCancelEdit}>
+              Cancel
+            </Button>
+          )}
           <Button variant="outlined" disabled>
             Get Excel Template
           </Button>
@@ -122,9 +151,14 @@ const ManageFaculties = () => {
                 <TableCell>{f.fullName}</TableCell>
                 <TableCell>{f.email}</TableCell>
                 <TableCell>
-                  <Button color="error" variant="contained" onClick={() => handleDelete(f.id)}>
-                    Remove Faculty
-                  </Button>
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    <Button variant="outlined" onClick={() => handleEdit(f)}>
+                      Edit
+                    </Button>
+                    <Button color="error" variant="contained" onClick={() => handleDelete(f.id)}>
+                      Remove
+                    </Button>
+                  </Box>
                 </TableCell>
               </TableRow>
             ))}

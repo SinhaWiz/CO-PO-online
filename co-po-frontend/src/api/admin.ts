@@ -113,6 +113,7 @@ export interface AdminsResponse {
 // Faculties API
 export const getFaculties = () => api.get<Faculty[]>('/admin/faculties');
 export const createFaculty = (data: Faculty) => api.post<Faculty>('/admin/faculties', data);
+export const updateFaculty = (id: string, data: Faculty) => api.put<Faculty>(`/admin/faculties/${id}`, data);
 export const deleteFaculty = (id: string) => api.delete(`/admin/faculties/${id}`);
 export const importFaculties = (file: File) => {
   const form = new FormData();
@@ -123,6 +124,7 @@ export const importFaculties = (file: File) => {
 // Students API
 export const getStudents = () => api.get<Student[]>('/admin/students');
 export const createStudent = (data: Student) => api.post<Student>('/admin/students', data);
+export const updateStudent = (id: string, data: Student) => api.put<Student>(`/admin/students/${id}`, data);
 export const deleteStudent = (id: string) => api.delete(`/admin/students/${id}`);
 export const importStudents = (file: File) => {
   const form = new FormData();

@@ -12,15 +12,16 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { getStudents, createStudent, deleteStudent, importStudents } from '../../api/admin';
+import { getStudents, createStudent, updateStudent, deleteStudent, importStudents } from '../../api/admin';
 import type { Student } from '../../api/admin';
 import BulkImportButton from '../../components/BulkImportButton';
 
+const emptyForm: Student = { id: '', batch: 2026, name: '', email: '', department: 'CSE', programme: 'BSC' };
+
 const ManageStudents = () => {
   const [students, setStudents] = useState<Student[]>([]);
-  const [form, setForm] = useState<Student>({ 
-    id: '', batch: 2026, name: '', email: '', department: 'CSE', programme: 'BSC' 
-  });
+  const [form, setForm] = useState<Student>(emptyForm);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const fetchStudents = async () => {
     try {
@@ -35,19 +36,35 @@ const ManageStudents = () => {
     fetchStudents();
   }, []);
 
-  const handleAdd = async () => {
+  const handleSave = async () => {
     try {
-      await createStudent({ ...form, batch: Number(form.batch) });
-      setForm({ ...form, id: '', name: '', email: '' }); // reset some fields
+      if (editingId) {
+        await updateStudent(editingId, { ...form, batch: Number(form.batch) });
+      } else {
+        await createStudent({ ...form, batch: Number(form.batch) });
+      }
+      setForm(emptyForm);
+      setEditingId(null);
       fetchStudents();
     } catch (error) {
-      console.error('Failed to add student', error);
+      console.error('Failed to save student', error);
     }
+  };
+
+  const handleEdit = (student: Student) => {
+    setForm(student);
+    setEditingId(student.id);
+  };
+
+  const handleCancelEdit = () => {
+    setForm(emptyForm);
+    setEditingId(null);
   };
 
   const handleDelete = async (id: string) => {
     try {
       await deleteStudent(id);
+      if (editingId === id) handleCancelEdit();
       fetchStudents();
     } catch (error) {
       console.error('Failed to delete student', error);
@@ -60,7 +77,13 @@ const ManageStudents = () => {
       
       <Paper sx={{ p: 2, mb: 2 }}>
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(6, 1fr)' }, gap: 1.5 }}>
-          <TextField label="ID" value={form.id} onChange={(e) => setForm({ ...form, id: e.target.value })} size="small" />
+          <TextField
+            label="ID"
+            value={form.id}
+            onChange={(e) => setForm({ ...form, id: e.target.value })}
+            size="small"
+            disabled={Boolean(editingId)}
+          />
           <TextField label="Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} size="small" />
           <TextField
             label="Email"
@@ -91,12 +114,14 @@ const ManageStudents = () => {
         </Box>
 
         <Box sx={{ mt: 2, display: 'flex', gap: 1.25, flexWrap: 'wrap' }}>
-          <Button variant="contained" onClick={handleAdd}>
-            Add Student
+          <Button variant="contained" onClick={handleSave}>
+            {editingId ? 'Update Student' : 'Add Student'}
           </Button>
-          <Button variant="outlined" disabled>
-            Edit Student
-          </Button>
+          {editingId && (
+            <Button variant="outlined" onClick={handleCancelEdit}>
+              Cancel
+            </Button>
+          )}
           <Button variant="outlined" disabled>
             Get Excel Template
           </Button>
@@ -127,9 +152,14 @@ const ManageStudents = () => {
                 <TableCell>{s.batch}</TableCell>
                 <TableCell>{s.department} / {s.programme}</TableCell>
                 <TableCell>
-                  <Button color="error" variant="contained" onClick={() => handleDelete(s.id)}>
-                    Remove Student
-                  </Button>
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    <Button variant="outlined" onClick={() => handleEdit(s)}>
+                      Edit
+                    </Button>
+                    <Button color="error" variant="contained" onClick={() => handleDelete(s.id)}>
+                      Remove
+                    </Button>
+                  </Box>
                 </TableCell>
               </TableRow>
             ))}
