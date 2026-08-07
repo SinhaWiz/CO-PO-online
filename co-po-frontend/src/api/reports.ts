@@ -22,6 +22,15 @@ export const summarizeCoursesWithAI = () => api.post<{ summary: string }>('/repo
     location: 'us-central1'
 });
 
+// Summarize raw student feedback text (used by the Summary Report page's
+// "Summarize with AI" button) - same demo project/location placeholders as
+// summarizeCoursesWithAI above, since neither has real GCP config wired up yet.
+export const summarizeFeedbackWithAI = (rawFeedback: string) => api.post<{ summary: string }>('/reports/feedback/summarize', {
+    rawFeedback,
+    projectId: 'demo-project',
+    location: 'us-central1'
+});
+
 export interface CohortStudent {
     id: string;
     name: string;

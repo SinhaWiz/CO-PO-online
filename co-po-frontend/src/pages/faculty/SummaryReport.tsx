@@ -25,6 +25,7 @@ import {
   type MyAssignment,
   type SummaryReportPreview,
 } from '../../api/faculty';
+import { summarizeFeedbackWithAI } from '../../api/reports';
 
 const assignmentKey = (a: MyAssignment) => `${a.courseCode}||${a.programme}||${a.academicYear}||${a.department}`;
 
@@ -38,6 +39,8 @@ const SummaryReport = () => {
   const [feedback1, setFeedback1] = useState('');
   const [feedback2, setFeedback2] = useState('');
   const [improvementPlan, setImprovementPlan] = useState('');
+  const [rawFeedback, setRawFeedback] = useState('');
+  const [summarizing, setSummarizing] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [generatedFile, setGeneratedFile] = useState<string | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -59,6 +62,7 @@ const SummaryReport = () => {
     setFeedback1('');
     setFeedback2('');
     setImprovementPlan('');
+    setRawFeedback('');
     if (!selectedAssignment) {
       setPreview(null);
       return;
@@ -73,6 +77,20 @@ const SummaryReport = () => {
       })
       .finally(() => setLoading(false));
   }, [selectedKey]);
+
+  const handleSummarize = async () => {
+    if (!rawFeedback.trim()) return;
+    setSummarizing(true);
+    setMessage(null);
+    try {
+      const res = await summarizeFeedbackWithAI(rawFeedback);
+      setFeedback1(res.data.summary.slice(0, FEEDBACK_LIMITS.feedback1));
+    } catch (error: any) {
+      setMessage({ type: 'error', text: error?.response?.data?.error || 'Failed to summarize feedback.' });
+    } finally {
+      setSummarizing(false);
+    }
+  };
 
   const handleGenerate = async () => {
     if (!selectedAssignment || !preview) return;
@@ -239,6 +257,24 @@ const SummaryReport = () => {
 
           <Paper sx={{ p: 2.5, mb: 2 }}>
             <Typography sx={{ fontWeight: 700, mb: 1.5 }}>3. Feedback & Comments</Typography>
+
+            <Box sx={{ mb: 2, p: 1.5, border: '1px dashed #cbd5e1', borderRadius: 1 }}>
+              <Typography sx={{ fontWeight: 600, fontSize: 13, mb: 1 }}>
+                Paste raw student feedback to summarize with AI (optional)
+              </Typography>
+              <TextField
+                placeholder="Paste feedback collected from students here..." multiline minRows={3} size="small" fullWidth
+                value={rawFeedback} onChange={(e) => setRawFeedback(e.target.value)}
+                sx={{ mb: 1 }}
+              />
+              <Button size="small" variant="outlined" onClick={handleSummarize} disabled={summarizing || !rawFeedback.trim()}>
+                {summarizing ? 'Summarizing...' : '🤖 Summarize with AI'}
+              </Button>
+              <Typography sx={{ color: '#94a3b8', fontSize: 12, mt: 0.5 }}>
+                Fills in "Summary of feedback from student" below - review and edit before generating.
+              </Typography>
+            </Box>
+
             <Box sx={{ display: 'grid', gap: 2 }}>
               <TextField
                 label="Summary of feedback from student" multiline minRows={3} size="small"
