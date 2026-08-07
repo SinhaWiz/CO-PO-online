@@ -19,6 +19,7 @@ const getFacultyBreadcrumb = (path: string): string => {
   if (path === '/faculty' || path === '/faculty/dashboard') return 'Home';
   if (path.startsWith('/faculty/assessments')) return 'Course Questions';
   if (path.startsWith('/faculty/marks')) return 'Student Marks';
+  if (path.startsWith('/faculty/results')) return 'View Results';
   if (path.startsWith('/faculty/thresholds')) return 'Course Thresholds';
   if (path.startsWith('/faculty/reports/co')) return 'CO Report';
   if (path.startsWith('/faculty/reports/po')) return 'PO Report';
@@ -42,7 +43,7 @@ const FacultyLayout = () => {
         { text: '📊  Course Summary', path: '/faculty', enabled: false },
         { text: '📝  Course Questions', path: '/faculty/assessments', enabled: true },
         { text: '✏️  Student Marks', path: '/faculty/marks', enabled: true },
-        { text: '📋  View Results', path: '/faculty', enabled: false },
+        { text: '📋  View Results', path: '/faculty/results', enabled: true },
         { text: '⚙️  Course Thresholds', path: '/faculty/thresholds', enabled: true },
       ],
     },

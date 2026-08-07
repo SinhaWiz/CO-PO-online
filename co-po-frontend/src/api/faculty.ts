@@ -355,3 +355,51 @@ export const generateConsolidatedMarksReport = (
 ) => api.post<MarksReportResult>(`${marksReportUrl(courseCode, programme, academicYear, department)}/consolidated`, {
   sectionIds,
 });
+
+export interface StudentResultRow {
+  studentId: string;
+  studentName: string;
+  batch: number;
+  attendanceWeighted: number;
+  quizAssignmentWeighted: number;
+  midWeighted: number;
+  finalWeighted: number;
+  totalPercentage: number;
+  letterGrade: string;
+  gradePoint: number;
+  passed: boolean;
+}
+
+export interface GradeDistributionRow {
+  letterGrade: string;
+  count: number;
+  percentage: number;
+}
+
+export interface ResultStatistics {
+  totalStudents: number;
+  passedCount: number;
+  failedCount: number;
+  passPercentage: number;
+  failPercentage: number;
+  averagePercentage: number;
+  averageGpa: number;
+  gradeDistribution: GradeDistributionRow[];
+}
+
+export interface CourseResultData {
+  majorityBatch: number;
+  batchBelow23: boolean;
+  results: StudentResultRow[];
+  statistics: ResultStatistics;
+}
+
+export interface ResultsOutcome {
+  data: CourseResultData | null;
+  issue: string | null;
+}
+
+export const getCourseResults = (courseCode: string, programme: string, academicYear: string, department: string) =>
+  api.get<ResultsOutcome>(
+    `/faculty/results/${encodeURIComponent(courseCode)}/${encodeURIComponent(programme)}/${encodeURIComponent(academicYear)}/${encodeURIComponent(department)}`,
+  );
