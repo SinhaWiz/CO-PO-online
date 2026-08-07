@@ -1,100 +1,90 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Box, Paper, Typography } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
+import {
+  getCourseAssignments,
+  getCourses,
+  getEnrollments,
+  getFaculties,
+  getStudents,
+} from '../../api/admin';
+
+interface StatCard {
+  label: string;
+  value: number | null;
+  path: string;
+}
 
 const AdminDashboardHome = () => {
+  const navigate = useNavigate();
   const [now, setNow] = useState(new Date());
+  const [stats, setStats] = useState<Record<string, number>>({});
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(new Date()), 1000);
     return () => window.clearInterval(timer);
   }, []);
 
+  useEffect(() => {
+    Promise.allSettled([
+      getStudents(), getFaculties(), getCourses(), getEnrollments(), getCourseAssignments(),
+    ]).then(([students, faculties, courses, enrollments, assignments]) => {
+      setStats({
+        students: students.status === 'fulfilled' ? students.value.data.length : 0,
+        faculties: faculties.status === 'fulfilled' ? faculties.value.data.length : 0,
+        courses: courses.status === 'fulfilled' ? courses.value.data.length : 0,
+        enrollments: enrollments.status === 'fulfilled' ? enrollments.value.data.length : 0,
+        assignments: assignments.status === 'fulfilled' ? assignments.value.data.length : 0,
+      });
+    });
+  }, []);
+
   const timeText = useMemo(
-    () =>
-      now.toLocaleTimeString([], {
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: false,
-      }),
+    () => now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }),
     [now],
   );
-
-  const dateText = useMemo(
-    () => now.toLocaleDateString([], { month: 'long', day: 'numeric', year: 'numeric' }),
-    [now],
-  );
-
+  const dateText = useMemo(() => now.toLocaleDateString([], { month: 'long', day: 'numeric', year: 'numeric' }), [now]);
   const dayText = useMemo(() => now.toLocaleDateString([], { weekday: 'long' }), [now]);
 
+  const cards: StatCard[] = [
+    { label: 'Students', value: stats.students ?? null, path: '/admin/students' },
+    { label: 'Faculty', value: stats.faculties ?? null, path: '/admin/faculties' },
+    { label: 'Courses', value: stats.courses ?? null, path: '/admin/courses' },
+    { label: 'Enrollments', value: stats.enrollments ?? null, path: '/admin/enrollments' },
+    { label: 'Course Assignments', value: stats.assignments ?? null, path: '/admin/course-assignments' },
+  ];
+
   return (
-    <Box
-      sx={{
-        minHeight: 'calc(100vh - 180px)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-    >
-      <Paper
-        sx={{
-          width: '100%',
-          maxWidth: 950,
-          p: { xs: 3, md: 6 },
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: 5,
-        }}
-      >
-        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2.5 }}>
-          <Box
-            sx={{
-              width: 180,
-              height: 180,
-              borderRadius: '50%',
-              border: '3px solid #bfdbfe',
-              bgcolor: '#eff6ff',
-              color: '#1d4ed8',
-              display: 'grid',
-              placeItems: 'center',
-              fontSize: 34,
-              fontWeight: 800,
-            }}
-          >
-            CP
-          </Box>
-
-          <Typography sx={{ fontSize: 34, fontWeight: 700, color: '#1e293b', textAlign: 'center' }}>
-            CO-PO Assessment System
-          </Typography>
-          <Typography sx={{ fontSize: 20, fontWeight: 500, color: '#64748b', textAlign: 'center' }}>
-            Administrator Dashboard
-          </Typography>
+    <Box>
+      <Paper sx={{ p: { xs: 3, md: 4 }, mb: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2 }}>
+        <Box>
+          <Typography sx={{ fontSize: 28, fontWeight: 700, color: '#1e293b' }}>CO-PO Assessment System</Typography>
+          <Typography sx={{ fontSize: 16, color: '#64748b' }}>Administrator Dashboard</Typography>
         </Box>
-
-        <Paper
-          variant="outlined"
-          sx={{
-            width: '100%',
-            maxWidth: 380,
-            p: 3,
-            textAlign: 'center',
-            borderRadius: 3,
-            borderColor: '#dbeafe',
-            background: 'linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)',
-          }}
-        >
-          <Typography sx={{ fontSize: 48, fontWeight: 700, letterSpacing: 1, color: '#1e293b' }}>{timeText}</Typography>
-          <Box sx={{ width: '100%', borderTop: '1px solid #e2e8f0', my: 1.5 }} />
-          <Typography sx={{ fontSize: 18, color: '#334155' }}>{dateText}</Typography>
-          <Typography sx={{ fontSize: 16, color: '#64748b', mt: 0.75 }}>{dayText}</Typography>
-        </Paper>
-
-        <Typography sx={{ fontSize: 16, color: '#64748b', textAlign: 'center' }}>
-          Click any menu item from the sidebar to get started
-        </Typography>
+        <Box sx={{ textAlign: 'right' }}>
+          <Typography sx={{ fontSize: 28, fontWeight: 700, color: '#1e293b', fontVariantNumeric: 'tabular-nums' }}>{timeText}</Typography>
+          <Typography sx={{ fontSize: 14, color: '#64748b' }}>{dayText}, {dateText}</Typography>
+        </Box>
       </Paper>
+
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', sm: 'repeat(5, 1fr)' }, gap: 2 }}>
+        {cards.map((card) => (
+          <Paper
+            key={card.label}
+            sx={{ p: 2.5, cursor: 'pointer', transition: 'box-shadow 0.15s', '&:hover': { boxShadow: 4 } }}
+            onClick={() => navigate(card.path)}
+          >
+            <Typography sx={{ fontSize: 13, color: '#64748b', mb: 0.5 }}>{card.label}</Typography>
+            <Typography sx={{ fontSize: 32, fontWeight: 700, color: '#1d4ed8' }}>
+              {card.value ?? '-'}
+            </Typography>
+          </Paper>
+        ))}
+      </Box>
+
+      <Typography sx={{ fontSize: 14, color: '#94a3b8', mt: 3 }}>
+        Click a card to jump to that section, or use the sidebar navigation.
+      </Typography>
     </Box>
   );
 };
