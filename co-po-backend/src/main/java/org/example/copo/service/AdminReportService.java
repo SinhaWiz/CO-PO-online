@@ -15,7 +15,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -40,9 +39,11 @@ public class AdminReportService {
     private static final DateTimeFormatter TS = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
     private final JdbcTemplate jdbcTemplate;
+    private final ReportStorageService reportStorage;
 
-    public AdminReportService(JdbcTemplate jdbcTemplate) {
+    public AdminReportService(JdbcTemplate jdbcTemplate, ReportStorageService reportStorage) {
         this.jdbcTemplate = jdbcTemplate;
+        this.reportStorage = reportStorage;
     }
 
     public List<String> getDistinctProgrammesFromStudents() {
@@ -236,26 +237,26 @@ public class AdminReportService {
 
     public List<ReportFileDto> listReportFiles() {
         List<ReportFileDto> files = new ArrayList<>();
-        files.addAll(scanDir(resolveReportDir("co_reports"), "CO"));
-        files.addAll(scanDir(resolveReportDir("po_reports"), "PO"));
-        files.addAll(scanDir(resolveReportDir("course_reports"), "Course"));
-        files.addAll(scanDir(resolveReportDir("summary_reports"), "Summary"));
-        files.addAll(scanDir(resolveReportDir("detailed_marks_reports"), "Detailed"));
-        files.addAll(scanDir(resolveReportDir("consolidated_marks_reports"), "Consolidated"));
-        files.addAll(scanDir(resolveReportDir("cohort_po_reports"), "Cohort PO"));
+        files.addAll(scanDir(reportStorage.resolveReportDir("co_reports"), "CO"));
+        files.addAll(scanDir(reportStorage.resolveReportDir("po_reports"), "PO"));
+        files.addAll(scanDir(reportStorage.resolveReportDir("course_reports"), "Course"));
+        files.addAll(scanDir(reportStorage.resolveReportDir("summary_reports"), "Summary"));
+        files.addAll(scanDir(reportStorage.resolveReportDir("detailed_marks_reports"), "Detailed"));
+        files.addAll(scanDir(reportStorage.resolveReportDir("consolidated_marks_reports"), "Consolidated"));
+        files.addAll(scanDir(reportStorage.resolveReportDir("cohort_po_reports"), "Cohort PO"));
         files.sort(Comparator.comparing(ReportFileDto::type).thenComparing(ReportFileDto::name));
         return files;
     }
 
     public File resolveDownloadFile(String type, String name) {
         Path dir = switch (type) {
-            case "CO" -> resolveReportDir("co_reports");
-            case "PO" -> resolveReportDir("po_reports");
-            case "Course" -> resolveReportDir("course_reports");
-            case "Summary" -> resolveReportDir("summary_reports");
-            case "Detailed" -> resolveReportDir("detailed_marks_reports");
-            case "Consolidated" -> resolveReportDir("consolidated_marks_reports");
-            case "Cohort PO" -> resolveReportDir("cohort_po_reports");
+            case "CO" -> reportStorage.resolveReportDir("co_reports");
+            case "PO" -> reportStorage.resolveReportDir("po_reports");
+            case "Course" -> reportStorage.resolveReportDir("course_reports");
+            case "Summary" -> reportStorage.resolveReportDir("summary_reports");
+            case "Detailed" -> reportStorage.resolveReportDir("detailed_marks_reports");
+            case "Consolidated" -> reportStorage.resolveReportDir("consolidated_marks_reports");
+            case "Cohort PO" -> reportStorage.resolveReportDir("cohort_po_reports");
             default -> null;
         };
 
@@ -365,7 +366,7 @@ public class AdminReportService {
     }
 
     private String writeCohortPdf(String programme, int batch, int cohortSize, List<CohortPoRowDto> rows) throws Exception {
-        Path dir = resolveReportDir("cohort_po_reports");
+        Path dir = reportStorage.resolveReportDir("cohort_po_reports");
         Files.createDirectories(dir);
 
         String safeProgramme = programme.replaceAll("[^A-Za-z0-9_-]", "");
@@ -426,14 +427,6 @@ public class AdminReportService {
         }
 
         return list;
-    }
-
-    private Path resolveReportDir(String dirName) {
-        Path preferred = Paths.get("..", "CO_PO_Assessment", dirName).normalize();
-        if (Files.exists(preferred.getParent())) {
-            return preferred;
-        }
-        return Paths.get(dirName).normalize();
     }
 
     private String getEnrollmentYear(String studentId, String courseCode, String programme) {

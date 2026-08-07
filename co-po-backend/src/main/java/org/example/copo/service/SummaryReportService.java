@@ -19,7 +19,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -65,6 +64,7 @@ public class SummaryReportService {
     private final AssignmentAuthorizationService authorizationService;
     private final StudentRepository studentRepository;
     private final CourseRepository courseRepository;
+    private final ReportStorageService reportStorage;
 
     public record EvaluationRow(String studentId, String studentName, Map<String, Double> obtainedByCo) {}
     public record CoHistogramRow(String coCode, List<Integer> bucketCounts) {}
@@ -240,7 +240,7 @@ public class SummaryReportService {
         String courseCode, String programme, String academicYear, String department,
         SummaryReportPreview preview, GenerateSummaryReportRequest request
     ) throws Exception {
-        Path dir = resolveReportDir("summary_reports");
+        Path dir = reportStorage.resolveReportDir("summary_reports");
         Files.createDirectories(dir);
 
         String safeCourseCode = courseCode.replaceAll("[^A-Za-z0-9_-]", "");
@@ -331,15 +331,5 @@ public class SummaryReportService {
     private String fmt(Double value) {
         if (value == null) return "0";
         return value == Math.floor(value) ? String.valueOf(value.intValue()) : String.format(Locale.US, "%.1f", value);
-    }
-
-    // Mirrors AdminReportService/FacultyReportService/CourseReportService's
-    // resolveReportDir - prefer the legacy desktop app's own output folder if present.
-    private Path resolveReportDir(String dirName) {
-        Path preferred = Paths.get("..", "CO_PO_Assessment", dirName).normalize();
-        if (Files.exists(preferred.getParent())) {
-            return preferred;
-        }
-        return Paths.get(dirName).normalize();
     }
 }

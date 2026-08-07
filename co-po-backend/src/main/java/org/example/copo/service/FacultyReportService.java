@@ -17,7 +17,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
@@ -44,6 +43,7 @@ public class FacultyReportService {
     private final AdminReportService adminReportService;
     private final CourseAssignmentRepository courseAssignmentRepository;
     private final AssignmentAuthorizationService authorizationService;
+    private final ReportStorageService reportStorage;
 
     public record ReportCommentInput(String code, String comment, String suggestions) {}
     public record GenerateReportRequest(List<ReportCommentInput> comments) {}
@@ -138,7 +138,7 @@ public class FacultyReportService {
         String reportType, String outputDir, String courseCode, String programme, String academicYear, String department,
         List<AttainmentService.OutcomeAttainmentRow> rows, Map<String, ReportCommentInput> commentsByCode
     ) throws Exception {
-        Path dir = resolveReportDir(outputDir);
+        Path dir = reportStorage.resolveReportDir(outputDir);
         Files.createDirectories(dir);
 
         String safeCourseCode = courseCode.replaceAll("[^A-Za-z0-9_-]", "");
@@ -179,16 +179,5 @@ public class FacultyReportService {
         }
 
         return fileName;
-    }
-
-    // Mirrors AdminReportService.resolveReportDir: prefer the legacy desktop app's own
-    // output folders if it's present on the same disk, so reports from both apps show
-    // up in one place during the migration period, falling back to a local folder.
-    private Path resolveReportDir(String dirName) {
-        Path preferred = Paths.get("..", "CO_PO_Assessment", dirName).normalize();
-        if (Files.exists(preferred.getParent())) {
-            return preferred;
-        }
-        return Paths.get(dirName).normalize();
     }
 }

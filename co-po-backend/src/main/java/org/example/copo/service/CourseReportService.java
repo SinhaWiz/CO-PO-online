@@ -26,7 +26,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -61,6 +60,7 @@ public class CourseReportService {
     private final CourseAssignmentThresholdService thresholdService;
     private final AssignmentAuthorizationService authorizationService;
     private final ObjectMapper objectMapper;
+    private final ReportStorageService reportStorage;
 
     public record GradeRow(String letter, Integer count) {}
     public record CoAttainmentRow(String coCode, Double maxMarks, Integer studentsAttained, Double attainmentPercent, String remarks) {}
@@ -306,7 +306,7 @@ public class CourseReportService {
         String courseCode, String programme, String academicYear, String department,
         CourseReportSeed seed, CourseReportForm form, String teacherName, double threshold
     ) throws Exception {
-        Path dir = resolveReportDir("course_reports");
+        Path dir = reportStorage.resolveReportDir("course_reports");
         Files.createDirectories(dir);
 
         String safeCourseCode = courseCode.replaceAll("[^A-Za-z0-9_-]", "");
@@ -466,16 +466,5 @@ public class CourseReportService {
 
     private String nullToNA(String value) {
         return (value == null || value.isBlank()) ? "N/A" : value;
-    }
-
-    // Mirrors AdminReportService/FacultyReportService's resolveReportDir - prefer the
-    // legacy desktop app's own output folder if present, so both apps' reports land
-    // in one place during the migration period.
-    private Path resolveReportDir(String dirName) {
-        Path preferred = Paths.get("..", "CO_PO_Assessment", dirName).normalize();
-        if (Files.exists(preferred.getParent())) {
-            return preferred;
-        }
-        return Paths.get(dirName).normalize();
     }
 }

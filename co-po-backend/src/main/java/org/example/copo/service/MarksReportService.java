@@ -39,7 +39,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -100,6 +99,7 @@ public class MarksReportService {
     private final CORepository coRepository;
     private final PORepository poRepository;
     private final CourseAssignmentThresholdService thresholdService;
+    private final ReportStorageService reportStorage;
 
     public record QuestionRow(Integer questionId, String title, double maxMarks, String coCode) {}
     public record StudentRowMarks(String studentId, String studentName, Map<Integer, Double> marksByQuestionId, double total) {}
@@ -553,7 +553,7 @@ public class MarksReportService {
         List<SectionReport> sectionReports, TypeAggregate consolidated, List<CoDistributionRow> distribution,
         boolean includeOverallCoAttainment, List<CoAttainmentTableRow> overallCoAttainment
     ) throws Exception {
-        Path dir = resolveReportDir("detailed_marks_reports");
+        Path dir = reportStorage.resolveReportDir("detailed_marks_reports");
         Files.createDirectories(dir);
 
         String safeCourseCode = courseCode.replaceAll("[^A-Za-z0-9_-]", "");
@@ -695,7 +695,7 @@ public class MarksReportService {
         String courseCode, String programme, String academicYear, String department, Course course,
         TypeAggregate coAggregate, TypeAggregate poAggregate
     ) throws Exception {
-        Path dir = resolveReportDir("consolidated_marks_reports");
+        Path dir = reportStorage.resolveReportDir("consolidated_marks_reports");
         Files.createDirectories(dir);
 
         String safeCourseCode = courseCode.replaceAll("[^A-Za-z0-9_-]", "");
@@ -798,15 +798,5 @@ public class MarksReportService {
         }
 
         for (int i = 0; i <= columnSums.length; i++) sheet.autoSizeColumn(i);
-    }
-
-    // Mirrors CourseReportService/FacultyReportService/SummaryReportService's
-    // resolveReportDir - prefer the legacy desktop app's own output folder if present.
-    private Path resolveReportDir(String dirName) {
-        Path preferred = Paths.get("..", "CO_PO_Assessment", dirName).normalize();
-        if (Files.exists(preferred.getParent())) {
-            return preferred;
-        }
-        return Paths.get(dirName).normalize();
     }
 }

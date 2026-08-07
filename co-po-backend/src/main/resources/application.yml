@@ -40,3 +40,13 @@ jwt:
 
 server:
   port: ${SERVER_PORT:8080}
+
+app:
+  report-storage:
+    # Where generated report/export files (PDFs, Excel workbooks) get written - see
+    # ReportStorageService for the full explanation. Empty by default: falls back to
+    # preferring the legacy desktop app's own output folders if present, otherwise a
+    # local folder relative to wherever the process runs - fine for a single-server
+    # deployment. Point this at a real mounted path (e.g. /var/co-po/reports) for
+    # anything beyond that.
+    base-dir: ${REPORT_STORAGE_DIR:}
