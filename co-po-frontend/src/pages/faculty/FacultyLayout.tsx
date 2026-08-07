@@ -17,6 +17,7 @@ const sidebarWidth = 280;
 
 const getFacultyBreadcrumb = (path: string): string => {
   if (path === '/faculty' || path === '/faculty/dashboard') return 'Home';
+  if (path.startsWith('/faculty/course-summary')) return 'Course Summary';
   if (path.startsWith('/faculty/assessments')) return 'Course Questions';
   if (path.startsWith('/faculty/marks')) return 'Student Marks';
   if (path.startsWith('/faculty/results')) return 'View Results';
@@ -42,7 +43,7 @@ const FacultyLayout = () => {
       title: 'NAVIGATION',
       items: [
         { text: '◄ Back to Courses', path: '/faculty', enabled: true },
-        { text: '📊  Course Summary', path: '/faculty', enabled: false },
+        { text: '📊  Course Summary', path: '/faculty/course-summary', enabled: true },
         { text: '📝  Course Questions', path: '/faculty/assessments', enabled: true },
         { text: '✏️  Student Marks', path: '/faculty/marks', enabled: true },
         { text: '📋  View Results', path: '/faculty/results', enabled: true },

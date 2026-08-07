@@ -437,3 +437,28 @@ export const importMarksExcel = (courseCode: string, programme: string, academic
   form.append('file', file);
   return api.post<MarksImportResult>(`${marksExcelUrl(courseCode, programme, academicYear)}/import`, form);
 };
+
+export interface AssessmentSectionSummary {
+  sectionName: string;
+  questionCount: number;
+  totalMarks: number;
+  marksEntered: number;
+  totalPossibleEntries: number;
+}
+
+export interface CourseSummary {
+  courseCode: string;
+  courseName: string;
+  programme: string;
+  academicYear: string;
+  enrolledStudents: number;
+  sections: AssessmentSectionSummary[];
+  totalQuestions: number;
+  totalMarks: number;
+  completionPercentage: number;
+}
+
+export const getCourseSummary = (courseCode: string, programme: string, academicYear: string) =>
+  api.get<CourseSummary>(
+    `/faculty/course-summary/${encodeURIComponent(courseCode)}/${encodeURIComponent(programme)}/${encodeURIComponent(academicYear)}`,
+  );
