@@ -9,13 +9,6 @@ export interface AssessmentQuestion {
   poIds?: number[];
 }
 
-export interface StudentAssessmentMarks {
-  id?: number;
-  studentId: string;
-  questionId: number;
-  marksObtained: number;
-}
-
 // Fetch Questions for an Assessment
 export const getQuestions = (assessmentId: number) => 
   api.get<AssessmentQuestion[]>(`/faculty/assessments/questions/${assessmentId}`);
@@ -31,14 +24,6 @@ export const updateQuestion = (questionId: number, data: Omit<AssessmentQuestion
 // Delete a Question
 export const deleteQuestion = (questionId: number) =>
   api.delete(`/faculty/assessments/questions/${questionId}`);
-
-// Fetch Marks for a Question
-export const getMarks = (questionId: number) => 
-  api.get<StudentAssessmentMarks[]>(`/faculty/assessments/marks/question/${questionId}`);
-
-// Save/Update Student Mark
-export const saveMarks = (data: StudentAssessmentMarks) =>
-  api.post<StudentAssessmentMarks>('/faculty/assessments/marks', data);
 
 // Change own password
 export const changeFacultyPassword = (currentPassword: string, newPassword: string, confirmPassword: string) =>

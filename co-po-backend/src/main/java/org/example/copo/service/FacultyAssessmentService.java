@@ -8,7 +8,6 @@ import org.example.copo.entity.Assessment;
 import org.example.copo.entity.AssessmentQuestion;
 import org.example.copo.entity.AssessmentQuestionPO;
 import org.example.copo.entity.CourseAssessmentSection;
-import org.example.copo.entity.StudentAssessmentMarks;
 import org.example.copo.exception.ResourceNotFoundException;
 import org.example.copo.repository.AssessmentQuestionPORepository;
 import org.example.copo.repository.AssessmentQuestionRepository;
@@ -16,7 +15,6 @@ import org.example.copo.repository.AssessmentRepository;
 import org.example.copo.repository.CourseAssessmentSectionRepository;
 import org.example.copo.repository.CourseCORepository;
 import org.example.copo.repository.CoursePORepository;
-import org.example.copo.repository.StudentAssessmentMarksRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,7 +28,6 @@ public class FacultyAssessmentService {
 
     private final AssessmentQuestionRepository questionRepository;
     private final AssessmentQuestionPORepository questionPoRepository;
-    private final StudentAssessmentMarksRepository marksRepository;
     private final AssessmentRepository assessmentRepository;
     private final CourseAssessmentSectionRepository sectionRepository;
     private final CourseCORepository courseCORepository;
@@ -119,32 +116,6 @@ public class FacultyAssessmentService {
         authorizationService.requireOwnsAssessment(facultyEmail, question.getAssessmentId());
         // AssessmentQuestion_PO rows are ON DELETE CASCADE, no separate cleanup needed.
         questionRepository.deleteById(questionId);
-    }
-
-    public List<StudentAssessmentMarks> getMarksForQuestion(String facultyEmail, Integer questionId) {
-        AssessmentQuestion question = questionRepository.findById(questionId)
-            .orElseThrow(() -> new ResourceNotFoundException("Question not found: " + questionId));
-        authorizationService.requireOwnsAssessment(facultyEmail, question.getAssessmentId());
-        return marksRepository.findByQuestionId(questionId);
-    }
-
-    // Upserts by (studentId, questionId) instead of blindly saving the client-supplied
-    // entity. Marks carry no natural unique id from the client, so a plain save() would
-    // either duplicate the row or fail a unique-constraint check on every re-grade.
-    @Transactional
-    public StudentAssessmentMarks saveStudentMarks(String facultyEmail, StudentAssessmentMarks marks) {
-        AssessmentQuestion question = questionRepository.findById(marks.getQuestionId())
-            .orElseThrow(() -> new ResourceNotFoundException("Question not found: " + marks.getQuestionId()));
-        authorizationService.requireOwnsAssessment(facultyEmail, question.getAssessmentId());
-
-        StudentAssessmentMarks existing = marksRepository
-            .findByStudentIdAndQuestionId(marks.getStudentId(), marks.getQuestionId())
-            .orElse(null);
-        if (existing != null) {
-            existing.setMarksObtained(marks.getMarksObtained());
-            return marksRepository.save(existing);
-        }
-        return marksRepository.save(marks);
     }
 
     private List<Integer> normalizePoIds(List<Integer> poIds) {

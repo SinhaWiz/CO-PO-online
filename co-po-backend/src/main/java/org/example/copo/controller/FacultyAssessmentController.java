@@ -8,7 +8,6 @@ import org.example.copo.entity.Assessment;
 import org.example.copo.entity.CO;
 import org.example.copo.entity.CourseAssessmentSection;
 import org.example.copo.entity.PO;
-import org.example.copo.entity.StudentAssessmentMarks;
 import org.example.copo.service.AssessmentService;
 import org.example.copo.service.CourseAssessmentSectionService;
 import org.example.copo.service.CourseOutcomeService;
@@ -64,22 +63,6 @@ public class FacultyAssessmentController {
     public ResponseEntity<?> deleteQuestion(Authentication authentication, @PathVariable Integer questionId) {
         assessmentService.deleteQuestion(authentication.getName(), questionId);
         return ResponseEntity.ok().build();
-    }
-
-    @PreAuthorize("hasRole('FACULTY')")
-    @GetMapping("/marks/question/{questionId}")
-    public ResponseEntity<List<StudentAssessmentMarks>> getMarksForQuestion(
-        Authentication authentication, @PathVariable Integer questionId
-    ) {
-        return ResponseEntity.ok(assessmentService.getMarksForQuestion(authentication.getName(), questionId));
-    }
-
-    @PreAuthorize("hasRole('FACULTY')")
-    @PostMapping("/marks")
-    public ResponseEntity<StudentAssessmentMarks> saveStudentMarks(
-        Authentication authentication, @Valid @RequestBody StudentAssessmentMarks marks
-    ) {
-        return ResponseEntity.ok(assessmentService.saveStudentMarks(authentication.getName(), marks));
     }
 
     // Read-only faculty access to a course's admin-defined sections - faculty need to

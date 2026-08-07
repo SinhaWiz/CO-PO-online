@@ -40,6 +40,7 @@ import {
 } from '../../api/admin';
 import { useConfirmDialog } from '../../components/ConfirmDialog';
 import BulkImportButton from '../../components/BulkImportButton';
+import { downloadCourseExcel, downloadCoursePdf } from '../../api/reports';
 
 const COURSE_CODE_REGEX = /^[A-Z]{3}\s\d{4}$/;
 const DEPARTMENT_REGEX = /^[A-Z]{3}$/;
@@ -163,6 +164,23 @@ const ManageCourses = () => {
     } catch (error) {
       console.error('Failed to save course', error);
       setMessage({ type: 'error', text: 'Failed to save course. Check duplicate key or invalid data.' });
+    }
+  };
+
+  const handleDownloadCatalog = async (kind: 'excel' | 'pdf') => {
+    try {
+      const blob = kind === 'excel' ? await downloadCourseExcel() : await downloadCoursePdf();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = kind === 'excel' ? 'courses.xlsx' : 'courses.pdf';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Failed to download course catalog', error);
+      setMessage({ type: 'error', text: 'Failed to download the course catalog.' });
     }
   };
 
@@ -376,6 +394,12 @@ const ManageCourses = () => {
             Clear
           </Button>
           <BulkImportButton label="Bulk Import (Excel)" onImport={importCourses} onComplete={fetchCourses} />
+          <Button variant="outlined" onClick={() => handleDownloadCatalog('excel')}>
+            Export Catalog (Excel)
+          </Button>
+          <Button variant="outlined" onClick={() => handleDownloadCatalog('pdf')}>
+            Export Catalog (PDF)
+          </Button>
         </Box>
       </Paper>
 
