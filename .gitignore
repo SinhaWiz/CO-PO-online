@@ -1,2 +1,9 @@
 .DS_Store
 co-po-backend/target/
+
+# Local secrets - never commit real DB passwords / JWT signing secrets. See
+# co-po-backend/src/main/resources/application.yml's header comment.
+application-local.yml
+.env
+.env.local
+*.env.local

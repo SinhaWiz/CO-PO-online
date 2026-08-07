@@ -2,16 +2,22 @@ spring:
   application:
     name: co-po-backend
 
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+
   datasource:
     url: ${DB_URL:jdbc:mysql://127.0.0.1:3306/co_po?createDatabaseIfNotExist=true}
     username: ${DB_USERNAME:root}
-    password: ${DB_PASSWORD:sinhawiz}
+    # No fallback on purpose - DB_PASSWORD must come from the environment in every
+    # profile, dev included. See application-dev.yml's header comment for how to set
+    # this up locally. Startup fails fast with a clear error if it's missing rather
+    # than silently running against a blank/guessed password.
+    password: ${DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:
     hibernate:
       ddl-auto: none
-    show-sql: true
     properties:
       hibernate:
         format_sql: true
@@ -26,13 +32,11 @@ spring:
     baseline-version: 0
 
 jwt:
-  secret: ${JWT_SECRET:1fc051ff98d769ef846ab7905a14740d39dc0d8f8e8aab9f088cd1541c232eee}
+  # Same as DB_PASSWORD - no fallback. A real deployment signs auth tokens with this;
+  # a checked-in default would mean anyone who's ever seen this repo can forge a valid
+  # login for any account.
+  secret: ${JWT_SECRET}
   expiration: 86400000 # 1 day in ms
-  
-server:
-  port: 8080
 
-logging:
-  level:
-    org.springframework.security: DEBUG
-    org.springframework.web: INFO
+server:
+  port: ${SERVER_PORT:8080}

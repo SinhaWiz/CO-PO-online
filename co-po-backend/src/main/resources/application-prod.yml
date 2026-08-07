@@ -1,0 +1,16 @@
+# Activate with SPRING_PROFILES_ACTIVE=prod. Quiet logging - no raw SQL, no
+# per-request security filter chain tracing, both of which are fine for a developer's
+# own machine and not something a real deployment's logs should be full of.
+#
+# DB_PASSWORD, DB_URL, DB_USERNAME, and JWT_SECRET all come from the environment
+# (application.yml), same as every other profile - a real deployment sets these
+# through whatever secrets mechanism its hosting platform provides (environment
+# variables injected by the platform, a secrets manager, etc.), never by editing this
+# file with real values.
+
+logging:
+  level:
+    root: WARN
+    org.springframework.security: WARN
+    org.springframework.web: WARN
+    org.example.copo: INFO

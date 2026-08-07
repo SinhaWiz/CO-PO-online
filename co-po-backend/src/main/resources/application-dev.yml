@@ -1,0 +1,25 @@
+# Active by default (see application.yml's spring.profiles.active). Verbose logging
+# that's genuinely useful while developing and genuinely too noisy for a real
+# deployment - full SQL statements, and DEBUG-level Spring Security (every filter
+# chain decision, every auth check).
+#
+# DB_PASSWORD and JWT_SECRET still have no default here on purpose - the base
+# application.yml requires them from the environment in every profile, dev included.
+# To run locally, export them once (e.g. in your shell profile or an untracked
+# .env-style file you source before running the app):
+#
+#   export DB_PASSWORD=your_local_mysql_password
+#   export JWT_SECRET=any_long_random_string_for_local_dev
+#
+# This used to have real fallback values committed directly in application.yml -
+# removed for the obvious reason (co-po-backend/src/main/resources/application.yml's
+# own header comment has the full explanation).
+
+spring:
+  jpa:
+    show-sql: true
+
+logging:
+  level:
+    org.springframework.security: DEBUG
+    org.springframework.web: INFO
