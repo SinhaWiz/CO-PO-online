@@ -24,12 +24,20 @@ spring:
 
   flyway:
     enabled: true
-    # Lets Flyway adopt a database that already has these tables (e.g. a dev DB set up
-    # by hand from the desktop app's schema.sql before this migration existed) without
-    # trying to re-run V1's CREATE TABLEs against it. Has no effect on a genuinely
-    # empty database - Flyway just runs V1 normally there.
+    # Lets Flyway adopt a database that already has these tables (e.g. the desktop
+    # app's own database, created from its schema.sql before this migration existed)
+    # without trying to re-run V1's CREATE TABLEs against it - V1 mirrors what
+    # schema.sql already creates almost exactly, so baseline-version must be 1 (not 0)
+    # to actually mark V1 itself as done. With baseline-version 0, Flyway would still
+    # attempt to run V1 for real against an adopted database and fail immediately on
+    # "Table 'Admin' already exists" - a bug in this config caught while writing the
+    # migration runbook (see co-po-backend/migration/README.md) rather than by
+    # actually running it, since no live database was available anywhere in this
+    # project to verify it against directly. V2 and V3 still run for real either way -
+    # they're genuine changes beyond what schema.sql ever created. Has no effect at all
+    # on a genuinely empty database - Flyway just runs V1, V2, V3 normally there.
     baseline-on-migrate: true
-    baseline-version: 0
+    baseline-version: 1
 
 jwt:
   # Same as DB_PASSWORD - no fallback. A real deployment signs auth tokens with this;

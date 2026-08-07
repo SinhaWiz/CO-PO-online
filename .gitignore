@@ -7,3 +7,9 @@ application-local.yml
 .env
 .env.local
 *.env.local
+
+# Desktop app's own DB credentials file - contains a real password the same way the
+# web backend's application-local.yml would. The whole CO_PO_Assessment/ folder is
+# untracked right now, but this rule means it stays excluded even if that folder ever
+# gets added to the repo.
+CO_PO_Assessment/dbcreds.properties
