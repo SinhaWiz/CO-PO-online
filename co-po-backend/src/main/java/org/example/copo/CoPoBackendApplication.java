@@ -58,6 +58,7 @@ public class CoPoBackendApplication {
 
     @Bean
     public CommandLineRunner dataInitializer(
+            PasswordMatcher passwordMatcher,
             PasswordEncoder passwordEncoder,
             JdbcTemplate jdbcTemplate) {
         return args -> {
@@ -81,12 +82,12 @@ public class CoPoBackendApplication {
                         String.class,
                         "admin@iut-dhaka.edu");
 
-                if ("password".equals(storedPassword)) {
+                if (!passwordMatcher.matches("Password123", storedPassword)) {
                     jdbcTemplate.update(
-                            "UPDATE Admin SET password = ?, is_super_admin = TRUE, created_by = 'system' WHERE email = ?",
-                            passwordEncoder.encode("Password123"),
-                            "admin@iut-dhaka.edu");
-                    System.out.println("Default admin password repaired: admin@iut-dhaka.edu / Password123");
+                        "UPDATE Admin SET password = ?, is_super_admin = TRUE, created_by = 'system' WHERE email = ?",
+                        passwordEncoder.encode("Password123"),
+                        "admin@iut-dhaka.edu");
+                    System.out.println("Default admin password reset: admin@iut-dhaka.edu / Password123");
                 }
                 return;
             }
