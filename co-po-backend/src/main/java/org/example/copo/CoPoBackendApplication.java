@@ -10,9 +10,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.MigrationInfo;
 import org.flywaydb.core.api.MigrationInfoService;
-import org.example.copo.security.PasswordMatcher;
-import org.example.copo.repository.AdminRepository;
-import org.example.copo.entity.Admin;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -61,9 +58,7 @@ public class CoPoBackendApplication {
 
     @Bean
     public CommandLineRunner dataInitializer(
-            AdminRepository adminRepository,
             PasswordEncoder passwordEncoder,
-            PasswordMatcher passwordMatcher,
             JdbcTemplate jdbcTemplate) {
         return args -> {
             Integer adminTableCount = jdbcTemplate.queryForObject(
@@ -75,29 +70,32 @@ public class CoPoBackendApplication {
                 return;
             }
 
-            // Only seed the default admin the very first time the app runs against an
-            // empty Admin table. Re-seeding on every startup used to blow away any
-            // password change made through the account management screens.
-            adminRepository.findByEmail("admin@iut-dhaka.edu").ifPresentOrElse(admin -> {
-                // Repair the known legacy default accounts if we find them in the wild.
-                // This keeps real password changes intact while still unblocking fresh
-                // deployments that were seeded with the wrong default password.
-                if (passwordMatcher.matches("password", admin.getPassword())) {
-                    admin.setPassword(passwordEncoder.encode("Password123"));
-                    admin.setIsSuperAdmin(true);
-                    admin.setCreatedBy("system");
-                    adminRepository.save(admin);
+            Integer adminCount = jdbcTemplate.queryForObject(
+                    "SELECT COUNT(*) FROM Admin WHERE email = ?",
+                    Integer.class,
+                    "admin@iut-dhaka.edu");
+
+            if (adminCount != null && adminCount > 0) {
+                String storedPassword = jdbcTemplate.queryForObject(
+                        "SELECT password FROM Admin WHERE email = ? LIMIT 1",
+                        String.class,
+                        "admin@iut-dhaka.edu");
+
+                if ("password".equals(storedPassword)) {
+                    jdbcTemplate.update(
+                            "UPDATE Admin SET password = ?, is_super_admin = TRUE, created_by = 'system' WHERE email = ?",
+                            passwordEncoder.encode("Password123"),
+                            "admin@iut-dhaka.edu");
                     System.out.println("Default admin password repaired: admin@iut-dhaka.edu / Password123");
                 }
-            }, () -> {
-                Admin admin = new Admin();
-                admin.setEmail("admin@iut-dhaka.edu");
-                admin.setPassword(passwordEncoder.encode("Password123"));
-                admin.setIsSuperAdmin(true);
-                admin.setCreatedBy("system");
-                adminRepository.save(admin);
-                System.out.println("Default admin user created: admin@iut-dhaka.edu / Password123");
-            });
+                return;
+            }
+
+            jdbcTemplate.update(
+                    "INSERT INTO Admin (email, password, is_super_admin, created_by) VALUES (?, ?, TRUE, 'system')",
+                    "admin@iut-dhaka.edu",
+                    passwordEncoder.encode("Password123"));
+            System.out.println("Default admin user created: admin@iut-dhaka.edu / Password123");
         };
     }
 }
