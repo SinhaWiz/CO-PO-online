@@ -59,6 +59,7 @@ CREATE TABLE PO (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE CourseAssignment (
+    id INT AUTO_INCREMENT PRIMARY KEY,
     faculty_id VARCHAR(20) NOT NULL,
     course_code VARCHAR(20) NOT NULL,
     programme VARCHAR(11) NOT NULL,
@@ -70,6 +71,7 @@ CREATE TABLE CourseAssignment (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE CulminationCourse (
+    id INT AUTO_INCREMENT PRIMARY KEY,
     course_code VARCHAR(20),
     programme VARCHAR(11),
     FOREIGN KEY (course_code, programme) REFERENCES Course(course_code, programme)
@@ -79,6 +81,7 @@ CREATE TABLE Course_CO (
     course_code VARCHAR(20) NOT NULL,
     programme VARCHAR(11) NOT NULL,
     co_id INT NOT NULL,
+    PRIMARY KEY (course_code, programme, co_id),
     FOREIGN KEY (course_code, programme) REFERENCES Course(course_code, programme),
     FOREIGN KEY (co_id) REFERENCES CO(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -87,6 +90,7 @@ CREATE TABLE Course_PO (
     course_code VARCHAR(20) NOT NULL,
     programme VARCHAR(11) NOT NULL,
     po_id INT NOT NULL,
+    PRIMARY KEY (course_code, programme, po_id),
     FOREIGN KEY (course_code, programme) REFERENCES Course(course_code, programme),
     FOREIGN KEY (po_id) REFERENCES PO(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -115,6 +119,7 @@ CREATE TABLE NonGraduatingStudentComment (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE Enrollment (
+    id INT AUTO_INCREMENT PRIMARY KEY,
     student_id VARCHAR(9) NOT NULL,
     course_id VARCHAR(20) NOT NULL,
     programme VARCHAR(11) NOT NULL,
@@ -250,6 +255,8 @@ FROM Student s
 
 -- Seed master CO/PO lists (CO1-CO20, PO1-PO12) and default global thresholds -
 -- matches the legacy desktop app's insert.sql / AdminConfigurationService defaults.
+INSERT INTO Admin (email, password, is_super_admin, created_by)
+VALUES ('admin@iut-dhaka.edu', 'Password123', FALSE, 'system');
 INSERT INTO CO (co_number) VALUES
     ('CO1'), ('CO2'), ('CO3'), ('CO4'), ('CO5'), ('CO6'), ('CO7'), ('CO8'), ('CO9'), ('CO10'),
     ('CO11'), ('CO12'), ('CO13'), ('CO14'), ('CO15'), ('CO16'), ('CO17'), ('CO18'), ('CO19'), ('CO20');
