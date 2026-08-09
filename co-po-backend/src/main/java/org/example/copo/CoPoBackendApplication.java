@@ -4,6 +4,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.example.copo.security.PasswordMatcher;
 import org.example.copo.repository.AdminRepository;
@@ -20,8 +21,18 @@ public class CoPoBackendApplication {
     public CommandLineRunner dataInitializer(
             AdminRepository adminRepository,
             PasswordEncoder passwordEncoder,
-            PasswordMatcher passwordMatcher) {
+            PasswordMatcher passwordMatcher,
+            JdbcTemplate jdbcTemplate) {
         return args -> {
+            Integer adminTableCount = jdbcTemplate.queryForObject(
+                    "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = 'Admin'",
+                    Integer.class);
+
+            if (adminTableCount == null || adminTableCount == 0) {
+                System.out.println("Admin table is missing in the current database; skipping default admin seeding.");
+                return;
+            }
+
             // Only seed the default admin the very first time the app runs against an
             // empty Admin table. Re-seeding on every startup used to blow away any
             // password change made through the account management screens.
