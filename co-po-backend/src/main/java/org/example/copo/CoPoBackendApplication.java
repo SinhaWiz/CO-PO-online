@@ -24,11 +24,11 @@ public class CoPoBackendApplication {
             if (adminRepository.count() == 0) {
                 Admin admin = new Admin();
                 admin.setEmail("admin@iut-dhaka.edu");
-                admin.setPassword(passwordEncoder.encode("password"));
+                admin.setPassword(passwordEncoder.encode("Password123"));
                 admin.setIsSuperAdmin(true);
                 admin.setCreatedBy("system");
                 adminRepository.save(admin);
-                System.out.println("Default admin user created: admin@iut-dhaka.edu / password");
+                System.out.println("Default admin user created: admin@iut-dhaka.edu / Password123");
             }
         };
     }
