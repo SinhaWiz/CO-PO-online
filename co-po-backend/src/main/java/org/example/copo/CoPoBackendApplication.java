@@ -4,17 +4,59 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
+import org.springframework.core.env.Environment;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.flywaydb.core.Flyway;
+import org.flywaydb.core.api.output.InfoResult;
 import org.example.copo.security.PasswordMatcher;
 import org.example.copo.repository.AdminRepository;
 import org.example.copo.entity.Admin;
+
+import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.ResultSet;
 
 @SpringBootApplication
 public class CoPoBackendApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(CoPoBackendApplication.class, args);
+    }
+
+    @Bean
+    public CommandLineRunner startupDiagnostics(
+            Environment environment,
+            DataSource dataSource,
+            Flyway flyway) {
+        return args -> {
+            String activeProfiles = String.join(",", environment.getActiveProfiles());
+            if (activeProfiles.isBlank()) {
+                activeProfiles = "(none)";
+            }
+
+            String jdbcUrl = "(unavailable)";
+            try (Connection connection = dataSource.getConnection()) {
+                DatabaseMetaData metaData = connection.getMetaData();
+                jdbcUrl = metaData.getURL();
+            } catch (Exception ex) {
+                System.out.println("Startup diagnostics: unable to read datasource URL: " + ex.getMessage());
+            }
+
+            System.out.println("Startup diagnostics: active profiles = " + activeProfiles);
+            System.out.println("Startup diagnostics: datasource URL = " + jdbcUrl);
+
+            try {
+                InfoResult info = flyway.info();
+                long pending = info.pending().length;
+                long success = info.applied().length;
+                System.out.println(
+                        "Startup diagnostics: Flyway applied migrations = " + success + ", pending migrations = " + pending);
+            } catch (Exception ex) {
+                System.out.println("Startup diagnostics: Flyway info lookup failed: " + ex.getMessage());
+            }
+        };
     }
 
     @Bean
