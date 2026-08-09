@@ -142,7 +142,7 @@ var). Once it's back up, the frontend's requests to the backend will pass CORS.
 ## First login - do this immediately
 
 The backend seeds a default account the very first time it starts against an empty
-database: **`admin@iut-dhaka.edu` / `password`**. That's fine for local development,
+database: **`admin@iut-dhaka.edu` / `Password123`**. That's fine for local development,
 where nobody else can reach it - it is **not** fine sitting on a public
 `onrender.com` URL, since anyone who finds it (including by just guessing, given
 it's a known default) logs in as super admin.

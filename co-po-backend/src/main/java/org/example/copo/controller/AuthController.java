@@ -33,20 +33,26 @@ public class AuthController {
         String rawPassword = loginRequest.getPassword();
         String role = loginRequest.getRole().toUpperCase();
 
+        System.out.println("Auth login attempt: email=" + email + ", role=" + role);
+
         if ("ADMIN".equals(role)) {
             Optional<Admin> adminOpt = adminRepository.findByEmail(email);
+            System.out.println("Auth login lookup: admin found=" + adminOpt.isPresent());
             if (adminOpt.isPresent()) {
                 Admin admin = adminOpt.get();
                 if (passwordMatcher.matches(rawPassword, admin.getPassword())) {
+                    System.out.println("Auth login success: email=" + email + ", role=" + role);
                     String token = jwtTokenProvider.generateToken(email, "ROLE_ADMIN", "Admin");
                     return ResponseEntity.ok(new JwtAuthResponse(token, email, "ROLE_ADMIN", "Admin"));
                 }
             }
         } else if ("FACULTY".equals(role)) {
             Optional<Faculty> facultyOpt = facultyRepository.findByEmail(email);
+            System.out.println("Auth login lookup: faculty found=" + facultyOpt.isPresent());
             if (facultyOpt.isPresent()) {
                 Faculty faculty = facultyOpt.get();
                 if (passwordMatcher.matches(rawPassword, faculty.getPassword())) {
+                    System.out.println("Auth login success: email=" + email + ", role=" + role);
                     String token = jwtTokenProvider.generateToken(email, "ROLE_FACULTY", faculty.getFullName());
                     return ResponseEntity.ok(new JwtAuthResponse(token, email, "ROLE_FACULTY", faculty.getFullName()));
                 }
