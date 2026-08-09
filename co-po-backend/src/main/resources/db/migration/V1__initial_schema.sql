@@ -10,7 +10,7 @@
 -- keep today's functionality working. AssessmentQuestion_PO is still created here too -
 -- restoring real many-to-many PO mapping (and retiring po_id) is planned separately.
 
-CREATE TABLE Admin (
+CREATE TABLE admin (
     id INT AUTO_INCREMENT PRIMARY KEY,
     email VARCHAR(100) NOT NULL UNIQUE,
     password VARCHAR(100) NOT NULL,
@@ -255,7 +255,7 @@ FROM Student s
 
 -- Seed master CO/PO lists (CO1-CO20, PO1-PO12) and default global thresholds -
 -- matches the legacy desktop app's insert.sql / AdminConfigurationService defaults.
-INSERT INTO Admin (email, password, is_super_admin, created_by)
+INSERT INTO admin (email, password, is_super_admin, created_by)
 VALUES ('admin@iut-dhaka.edu', 'Password123', FALSE, 'system');
 INSERT INTO CO (co_number) VALUES
     ('CO1'), ('CO2'), ('CO3'), ('CO4'), ('CO5'), ('CO6'), ('CO7'), ('CO8'), ('CO9'), ('CO10'),

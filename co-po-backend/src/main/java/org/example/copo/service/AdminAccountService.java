@@ -230,12 +230,12 @@ public class AdminAccountService {
     }
 
     private void ensureAdminColumns() {
-        jdbcTemplate.execute("ALTER TABLE Admin ADD COLUMN IF NOT EXISTS is_super_admin BOOLEAN DEFAULT FALSE");
-        jdbcTemplate.execute("ALTER TABLE Admin ADD COLUMN IF NOT EXISTS created_by VARCHAR(100)");
-        jdbcTemplate.execute("ALTER TABLE Admin ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
+        jdbcTemplate.execute("ALTER TABLE admin ADD COLUMN IF NOT EXISTS is_super_admin BOOLEAN DEFAULT FALSE");
+        jdbcTemplate.execute("ALTER TABLE admin ADD COLUMN IF NOT EXISTS created_by VARCHAR(100)");
+        jdbcTemplate.execute("ALTER TABLE admin ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
 
-        jdbcTemplate.update("UPDATE Admin SET is_super_admin = FALSE WHERE is_super_admin IS NULL");
-        jdbcTemplate.update("UPDATE Admin SET created_by = 'system' WHERE created_by IS NULL");
+        jdbcTemplate.update("UPDATE admin SET is_super_admin = FALSE WHERE is_super_admin IS NULL");
+        jdbcTemplate.update("UPDATE admin SET created_by = 'system' WHERE created_by IS NULL");
     }
 
     private ResponseStatusException badRequest(String message) {

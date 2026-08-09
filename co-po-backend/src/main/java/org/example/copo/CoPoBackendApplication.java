@@ -64,7 +64,7 @@ public class CoPoBackendApplication {
             JdbcTemplate jdbcTemplate) {
         return args -> {
             Integer adminTableCount = jdbcTemplate.queryForObject(
-                    "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = 'Admin'",
+                    "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = 'admin'",
                     Integer.class);
 
             if (adminTableCount == null || adminTableCount == 0) {
@@ -73,19 +73,19 @@ public class CoPoBackendApplication {
             }
 
             Integer adminCount = jdbcTemplate.queryForObject(
-                    "SELECT COUNT(*) FROM Admin WHERE email = ?",
+                    "SELECT COUNT(*) FROM admin WHERE email = ?",
                     Integer.class,
                     "admin@iut-dhaka.edu");
 
             if (adminCount != null && adminCount > 0) {
                 String storedPassword = jdbcTemplate.queryForObject(
-                        "SELECT password FROM Admin WHERE email = ? LIMIT 1",
+                        "SELECT password FROM admin WHERE email = ? LIMIT 1",
                         String.class,
                         "admin@iut-dhaka.edu");
 
                 if (!passwordMatcher.matches("Password123", storedPassword)) {
                     jdbcTemplate.update(
-                        "UPDATE Admin SET password = ?, is_super_admin = TRUE, created_by = 'system' WHERE email = ?",
+                        "UPDATE admin SET password = ?, is_super_admin = TRUE, created_by = 'system' WHERE email = ?",
                         passwordEncoder.encode("Password123"),
                         "admin@iut-dhaka.edu");
                     System.out.println("Default admin password reset: admin@iut-dhaka.edu / Password123");
@@ -94,7 +94,7 @@ public class CoPoBackendApplication {
             }
 
             jdbcTemplate.update(
-                    "INSERT INTO Admin (email, password, is_super_admin, created_by) VALUES (?, ?, TRUE, 'system')",
+                    "INSERT INTO admin (email, password, is_super_admin, created_by) VALUES (?, ?, TRUE, 'system')",
                     "admin@iut-dhaka.edu",
                     passwordEncoder.encode("Password123"));
             System.out.println("Default admin user created: admin@iut-dhaka.edu / Password123");
