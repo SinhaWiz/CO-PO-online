@@ -8,7 +8,8 @@ import org.springframework.core.env.Environment;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.flywaydb.core.Flyway;
-import org.flywaydb.core.api.output.InfoResult;
+import org.flywaydb.core.api.MigrationInfo;
+import org.flywaydb.core.api.MigrationInfoService;
 import org.example.copo.security.PasswordMatcher;
 import org.example.copo.repository.AdminRepository;
 import org.example.copo.entity.Admin;
@@ -16,7 +17,6 @@ import org.example.copo.entity.Admin;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
-import java.sql.ResultSet;
 
 @SpringBootApplication
 public class CoPoBackendApplication {
@@ -48,11 +48,11 @@ public class CoPoBackendApplication {
             System.out.println("Startup diagnostics: datasource URL = " + jdbcUrl);
 
             try {
-                InfoResult info = flyway.info();
-                long pending = info.pending().length;
-                long success = info.applied().length;
+                MigrationInfoService info = flyway.info();
+                MigrationInfo[] pending = info.pending();
+                MigrationInfo[] applied = info.applied();
                 System.out.println(
-                        "Startup diagnostics: Flyway applied migrations = " + success + ", pending migrations = " + pending);
+                        "Startup diagnostics: Flyway applied migrations = " + applied.length + ", pending migrations = " + pending.length);
             } catch (Exception ex) {
                 System.out.println("Startup diagnostics: Flyway info lookup failed: " + ex.getMessage());
             }
